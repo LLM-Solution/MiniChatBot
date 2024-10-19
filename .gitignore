@@ -1,0 +1,7 @@
+# Ignore folders
+/logs
+
+# Ignore files
+
+# Ignore extensions
+*.pyc
