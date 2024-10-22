@@ -1,5 +1,7 @@
 # Ignore folders
 /logs
+/llama.cpp
+/Notebooks
 
 # Ignore files
 
