@@ -4,9 +4,9 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-22 17:48:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-22 19:32:03
+# @Last modified time: 2024-10-23 16:21:06
 
-""" Description. """
+""" Base of Command Line Interface object. """
 
 # Built-in packages
 from logging import getLogger
@@ -37,7 +37,7 @@ class _BaseCommandLineInterface:
     verbose : bool, optional
         If True then LLM is run with verbosity. Default is False.
     n_ctx : int, optional
-        Maximum number of input tokens for LLM.
+        Maximum number of input tokens for LLM, default is 32 768.
 
     Methods
     -------
@@ -45,7 +45,7 @@ class _BaseCommandLineInterface:
     answer
     ask
     exit
-    reset_conv
+    reset_prompt
     run
 
     Attributes
@@ -66,15 +66,13 @@ class _BaseCommandLineInterface:
 
     """
 
-    similarity_search = None
-
     def __init__(
         self,
         model_path: Path | str,
         lora_path: Path | str = None,
         init_prompt: str = None,
         verbose: bool = False,
-        n_ctx: int = 1024,
+        n_ctx: int = 32768,
         n_threads=6,
         **kwargs,
     ):
@@ -91,7 +89,7 @@ class _BaseCommandLineInterface:
         self.llm = Llama(
             model_path=str(model_path),
             n_ctx=n_ctx,
-            verbose=verbose,
+            verbose=False,
             n_threads=n_threads,
             lora_path=lora_path,
             **kwargs,
@@ -103,7 +101,7 @@ class _BaseCommandLineInterface:
         self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
         self.init_prompt = init_prompt
 
-        self.reset_conversation()
+        self.reset_prompt()
 
         self.stop = [f"{self.user_name}:", f"{self.ai_name}:"]
 
@@ -114,21 +112,24 @@ class _BaseCommandLineInterface:
                       f"C or write 'exit' to exit\n\n")
 
         self.logger.debug("<Run>")
+        question = ""
 
         try:
-            while True:
-                str_time = strftime("%H:%M:%S")
-                question = input(f"{str_time} | {self.user_name}: ")
+            str_time = strftime("%H:%M:%S")
+            question = input(f"{str_time} | {self.user_name}: ")
 
-                if question == "exit":
-                    self.exit(f"Goodbye {self.user_name} ! I hope to see you "
-                              f"soon !\n")
-
+            while question.lower() != "exit":
                 output = self.ask(question, stream=True)
                 self.answer(output)
 
+                str_time = strftime("%H:%M:%S")
+                question = input(f"{str_time} | {self.user_name}: ")
+
         except Exception as e:
             self.exit(f"\n\nAN ERROR OCCURS.\n\n{type(e)}: {e}")
+
+        self.exit(f"Goodbye {self.user_name} ! I hope to see you "
+                  f"soon !\n")
 
     def answer(self, output: Generator[str, None, None]):
         """ Display the answer of the LLM.
@@ -146,11 +147,12 @@ class _BaseCommandLineInterface:
             answer += text
             self._display(text, end='', flush=True)
 
-        self.conv_hist += f"\n{self.ai_name}: {answer}"
+        # self.prompt_hist += f"\n{self.ai_name}: {answer}"
+        self.prompt_hist += f"{answer}"
 
         self.logger.debug(f"{self.ai_name}: {answer}")
 
-        self._display("\n")
+        self._display("")
 
     def ask(
         self,
@@ -178,15 +180,15 @@ class _BaseCommandLineInterface:
         self.logger.debug(f"type {type(question)}")
 
         # Get prompt at the suitable format
-        prompt = f"{self.user_name}: {question}"
+        prompt = f"{self.user_name}: {question}\n{self.ai_name}: "
 
-        self.conv_hist += "\n" + prompt
+        self.prompt_hist += prompt
 
-        # Remove older conversation if exceed context limit
-        self._check_conv_limit_context()
+        # Remove older prompt if exceed context limit
+        self._check_prompt_limit_context()
 
-        # Feed the LLM with all the conversation historic available
-        prompt = str(self.conv_hist)
+        # Feed the LLM with all the prompt historic available
+        prompt = str(self.prompt_hist)
 
         return self(str(prompt), stream=stream)
 
@@ -224,15 +226,21 @@ class _BaseCommandLineInterface:
             return r['choices'][0]['text']
 
     def _stream_call(self, response: Generator) -> Generator[str, None, None]:
+        text = ""
         for g in response:
+            text += g['choices'][0]['text']
             yield g['choices'][0]['text']
 
-    def _check_conv_limit_context(self):
-        # FIXME : How deal with too large conversation such that all the
+        self.logger.debug(f"answer {text}")
+
+    def _check_prompt_limit_context(self):
+        # FIXME : How deal with too large prompt such that all the
         #         conversation is removed ?
-        while self._get_n_token(str(self.conv_hist)) > self.n_ctx:
-            poped_conv = self.conv_hist.pop_fifo()
-            self.logger.debug(f"Pop the following part: {poped_conv}")
+        while self._get_n_token(str(self.prompt_hist)) > self.n_ctx:
+            chunked_prompt = self.prompt_hist.split("\n")
+            poped_prompt = chunked_prompt.pop(1)
+            self.logger.debug(f"Pop the following part: {poped_prompt}")
+            self.prompt_hist = "\n".join(chunked_prompt)
 
     def _get_n_token(self, sentence: str) -> int:
         return len(self.llm.tokenize(sentence.encode('utf-8')))
@@ -251,17 +259,15 @@ class _BaseCommandLineInterface:
             self._stream(txt)
 
         if self.verbose:
-            print(f"\n\nThe conversation was:\n\n{self.conv_hist}\n\n")
+            print(f"\n\nThe full prompt was:\n\n{self.prompt_hist}\n\n")
 
         self.logger.debug("<Exit>")
 
-        exit()
+    def reset_prompt(self):
+        """ Reset the current prompt history with the `init_prompt`. """
+        self.logger.debug("<Reset prompt>")
 
-    def reset_conversation(self):
-        """ Reset the current conversation with the `init_prompt`. """
-        self.logger.debug("<Reset conversation>")
-
-        self.conv_hist = self.init_prompt
+        self.prompt_hist = self.init_prompt + "\n"
 
     def _stream(self, txt: str):
         for chars in txt:
@@ -273,6 +279,18 @@ class _BaseCommandLineInterface:
 
 
 if __name__ == "__main__":
-    from config import MODEL_PATH, PROMPT
+    from config import GGUF_MODEL, PROMPT
+    import logging.config
+    import yaml
 
-    _BaseCommandLineInterface()
+    # Load logging configuration
+    with open('./logging.ini', 'r') as f:
+        log_config = yaml.safe_load(f.read())
+
+    logging.config.dictConfig(log_config)
+
+    cli = _BaseCommandLineInterface(
+        model_path=GGUF_MODEL,
+        init_prompt=PROMPT,
+    )
+    cli.run()
