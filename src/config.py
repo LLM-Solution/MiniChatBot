@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-18 17:20:20
+# @Last modified time: 2024-10-23 17:31:23
 
 """ Configuration variables. """
 
@@ -28,16 +28,17 @@ TOKEN_LIMIT = 512
 # DATA_PATH = Path("./data/LLM_Solutions.json")
 DATA_PATH = Path("./data/full_data.json")
 
+# Model paths
 MODEL_NAME = Path("./models/Llama-3.2-1B")
-# MODEL_NAME = Path("openlm-research/open_llama_3b_v2")
-# MODEL_NAME = Path("openlm-research/open_llama_7b_v2")
-# MODEL_NAME = Path("openlm-research/open_llama_13b")
-# MODEL_NAME = Path("mistralai/mistral-7B-v0.1")
+ORIGINAL_MODEL = MODEL_NAME
+LORA_WEIGHTS = Path("./models/LoRA_weights_MiniChatBot")
+MODEL_PATH = Path("./models/MiniChatBot-1.0-1B/")
+GGUF_MODEL = Path("./models/MiniChatBot-1.0-1B.gguf")
 
 # Training parameters
 BATCH_SIZE = 1
-ACCUMULATION_STEPS = 4
-LR = 5e-6 * 16 # 5e-5
+ACCUMULATION_STEPS = 8
+LR = 5e-6 * 16 / 16 # 5e-5
 DEVICE = 'cuda:0' if cuda.is_available() else 'cpu'
 
 # Checkpoint parameters
@@ -49,6 +50,33 @@ CP_TIMESTEP = 5 * 60
 MAX_LENGTH = 32
 PATH_TO_SAVE_OUTPUT = Path("./data/output.json")
 
+# Prompts
+# PROMPT = ("This is a conversation between User and MiniChatBot. MiniChatBot "
+#           "answers questions related to LLM Solutions, Arthur Bernard, and "
+#           "the services offered by LLM Solutions. The conversation may be in "
+#           "English or in French. If the User questions are outside of the "
+#           "scope of LLM Solutions or Arthur Bernard, the MiniChatBot focuses "
+#           "back the subject around LLM Solutions.")
+# PROMPT = ("This is a conversation between User and MiniChatBot. MiniChatBot "
+#           "answers questions related to LLM Solutions, Arthur Bernard, and "
+#           "the services offered by LLM Solutions. The conversation may take "
+#           "place in English or in French. If the User asks questions that are "
+#           "outside the scope of LLM Solutions or Arthur Bernard, MiniChatBot "
+#           "will refocus the conversation on LLM Solutions and its services.")
+
+PROMPT = ("This is a conversation between User and MiniChatBot. MiniChatBot "
+          "answers questions related to LLM Solutions, Arthur Bernard, and "
+          "the services offered by LLM Solutions. The conversation may take "
+          "place in English or in French. If the User asks questions that are "
+          "outside the scope of LLM Solutions or Arthur Bernard, MiniChatBot "
+          "will refocus the conversation on LLM Solutions and its services.\n"
+          "\nUser: Qui est le président des USA ?\nMiniChatBot: Le président "
+          "actuel des Etats-Unis est Joe Biden, mais je suis là pour répondre "
+          "à tes questions au sujet de LLM Solutions.\nUser: Who are you ?\n"
+          "MiniChatBot: My name is MiniChatBot, I am an Artificial "
+          "Intellignece retrained by LLM Solutionsin in order to inform you "
+          "about the services they offer.")
+
 
 class _BasisParser(ArgumentParser):
     def __init__(self, description: str, file: str = None):
@@ -58,7 +86,6 @@ class _BasisParser(ArgumentParser):
     def __str__(self) -> str:
         args = self.parse_args()
         kw = vars(args)
-        # n_max = max([len(k) for k in kw.keys()])
         str_args = "\n".join([f"{k:20} = {v}" for k, v in kw.items()])
 
         return f"\nRun {self.file}\n" + str_args
