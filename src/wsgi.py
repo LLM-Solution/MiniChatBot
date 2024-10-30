@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-24 23:42:59
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 08:37:21
+# @Last modified time: 2024-10-30 08:43:03
 
 """ Description. """
 
@@ -16,11 +16,12 @@ import yaml
 
 # Local packages
 from api import MiniChatBotAPI
+from config import ROOT
 
 __all__ = []
 
 # Load logging configuration
-with open('./logging.ini', 'r') as f:
+with open(ROOT / 'logging.ini', 'r') as f:
     log_config = yaml.safe_load(f.read())
 
 logging.config.dictConfig(log_config)

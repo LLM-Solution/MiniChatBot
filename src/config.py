@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-28 20:14:44
+# @Last modified time: 2024-10-30 08:42:40
 
 """ Configuration variables. """
 
@@ -22,18 +22,19 @@ __all__ = []
 
 
 # General parameters
+ROOT = Path(".")
 LOG = getLogger('train')
 LOG_NO_CONSOLE = getLogger('train_no_console')
 TOKEN_LIMIT = 2048
 # DATA_PATH = Path("./data/LLM_Solutions.json")
-DATA_PATH = Path("./data/full_data.json")
+DATA_PATH = ROOT / "data/full_data.json"
 
 # Model paths
-MODEL_NAME = Path("./models/Llama-3.2-1B")
+MODEL_NAME = ROOT / "models/Llama-3.2-1B"
 ORIGINAL_MODEL = MODEL_NAME
-LORA_WEIGHTS = Path("./models/LoRA_weights_MiniChatBot")
-MODEL_PATH = Path("./models/MiniChatBot-1.0-1B/")
-GGUF_MODEL = Path("./models/MiniChatBot-1.0-1B.gguf")
+LORA_WEIGHTS = ROOT / "models/LoRA_weights_MiniChatBot"
+MODEL_PATH = ROOT / "models/MiniChatBot-1.0-1B/"
+GGUF_MODEL = ROOT / "models/MiniChatBot-1.0-1B.gguf"
 
 # Training parameters
 BATCH_SIZE = 1
@@ -44,12 +45,12 @@ DEVICE = 'cuda:0' if cuda.is_available() else 'cpu'
 
 # Checkpoint parameters
 CHECKPOINT = True
-CP_PATH = "./checkpoint/"
+CP_PATH = ROOT / "checkpoint/"
 CP_TIMESTEP = 12 * 5 * 60
 
 # Evaluation parameters
 MAX_LENGTH = 32
-PATH_TO_SAVE_OUTPUT = Path("./data/output.json")
+PATH_TO_SAVE_OUTPUT = ROOT / "data/output.json"
 
 # Prompts
 # PROMPT = ("This is a conversation between User and MiniChatBot. MiniChatBot "
