@@ -4,11 +4,13 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-23 18:10:58
+# @Last modified time: 2024-10-30 08:16:45
 
 """ Flask API object for MiniChatBot. """
 
 # Built-in packages
+from logging import getLogger
+from markupsafe import escape
 
 # Third party packages
 from flask import Flask, request, Response
@@ -16,9 +18,12 @@ from flask import Flask, request, Response
 # Local packages
 from _base_api import API, cors_required
 from _base_cli import _BaseCommandLineInterface
-from config import LOG, GGUF_MODEL, PROMPT
+from config import GGUF_MODEL, PROMPT
 
 __all__ = []
+
+
+LOG = getLogger('app')
 
 
 class MiniChatBotAPI(API, _BaseCommandLineInterface):
@@ -46,7 +51,6 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
         # Set API part
         LOG.debug("Start init Flask API object")
         self.app = Flask(__name__)
-        # self.add_route()
         self.add_post_cli_route()
 
         LOG.debug("Flask API object is initiated")
@@ -72,10 +76,10 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             Robot: Joe Biden is the president of USA.
 
             """
-            question = request.json.get("question")
+            question = escape(request.json.get("question"))
             stream = request.json.get("stream", True)
             session_id = request.json.get("session_id")
-            LOG.debug(f"ask: {question}")
+            LOG.debug(f"ask - session_id: {session_id} - question: {question}")
 
             # FIXME : should be escaped ? to avoid code injection
             # return self.cli.ask(escape(question), stream=stream)
@@ -87,15 +91,20 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
     def answer(self, output, stream: bool = False):
         if stream:
             def generator():
+                full_answer = ""
                 for chunk in output:
+                    full_answer += chunk
                     self.prompt_hist += chunk
 
                     yield chunk
+
+                LOG.debug(f"answer - resposne: {full_answer}")
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
             self.prompt_hist += output
+            LOG.debug(f"answer - response: {output}")
             reponse = Response(output)
 
         return response

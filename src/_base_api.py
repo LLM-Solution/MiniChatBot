@@ -4,12 +4,13 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-18 17:26:54
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-23 16:59:20
+# @Last modified time: 2024-10-30 08:20:32
 
 """ Flask API object. """
 
 # Built-in packages
 from functools import wraps
+from logging import getLogger
 from pathlib import Path
 
 # Third party packages
@@ -17,9 +18,12 @@ from flask import Flask, request, make_response, jsonify, stream_with_context, R
 
 # Local packages
 from _base_cli import _BaseCommandLineInterface
-from config import GGUF_MODEL, LOG, PROMPT
+from config import GGUF_MODEL, PROMPT
 
 __all__ = []
+
+
+LOG = getLogger('app')
 
 
 # CORS decorator function

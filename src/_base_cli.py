@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-22 17:48:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-23 16:21:06
+# @Last modified time: 2024-10-30 08:24:56
 
 """ Base of Command Line Interface object. """
 
@@ -21,6 +21,9 @@ from llama_cpp import Llama
 # Local packages
 
 __all__ = []
+
+
+LOG = getLogger('cli')
 
 
 class _BaseCommandLineInterface:
@@ -76,14 +79,13 @@ class _BaseCommandLineInterface:
         n_threads=6,
         **kwargs,
     ):
-        self.logger = getLogger('cli')
         self.verbose = verbose
         self.n_ctx = n_ctx
-        self.logger.debug(f"verbose={verbose}, n_ctx={n_ctx}, "
+        LOG.debug(f"verbose={verbose}, n_ctx={n_ctx}, "
                           f"n_threads={n_threads}, init_prompt={init_prompt}, "
                           f"kwargs={kwargs}")
-        self.logger.debug(f"model_path={model_path}")
-        self.logger.debug(f"lora_path={lora_path}")
+        LOG.debug(f"model_path={model_path}")
+        LOG.debug(f"lora_path={lora_path}")
 
         # Set LLM model
         self.llm = Llama(
@@ -98,7 +100,7 @@ class _BaseCommandLineInterface:
         self.today = strftime("%B %d, %Y")
         self.user_name = "User"
         self.ai_name = "MiniChatBot"
-        self.logger.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
+        LOG.debug(f"user_name={self.user_name}&ai_name={self.ai_name}")
         self.init_prompt = init_prompt
 
         self.reset_prompt()
@@ -111,7 +113,7 @@ class _BaseCommandLineInterface:
                       f"you can ask me anything about LLM Solution.\nPress ctrl + "
                       f"C or write 'exit' to exit\n\n")
 
-        self.logger.debug("<Run>")
+        LOG.debug("<Run>")
         question = ""
 
         try:
@@ -150,7 +152,7 @@ class _BaseCommandLineInterface:
         # self.prompt_hist += f"\n{self.ai_name}: {answer}"
         self.prompt_hist += f"{answer}"
 
-        self.logger.debug(f"{self.ai_name}: {answer}")
+        LOG.debug(f"{self.ai_name}: {answer}")
 
         self._display("")
 
@@ -176,8 +178,8 @@ class _BaseCommandLineInterface:
             otherwise return a string.
 
         """
-        self.logger.debug(f"ask : {self.user_name}: {question}")
-        self.logger.debug(f"type {type(question)}")
+        LOG.debug(f"ask : {self.user_name}: {question}")
+        LOG.debug(f"type {type(question)}")
 
         # Get prompt at the suitable format
         prompt = f"{self.user_name}: {question}\n{self.ai_name}: "
@@ -214,7 +216,7 @@ class _BaseCommandLineInterface:
             otherwise return a string.
 
         """
-        self.logger.debug(f"prompt {prompt}")
+        LOG.debug(f"prompt {prompt}")
 
         r = self.llm(prompt, stop=self.stop, stream=stream, max_tokens=None)
 
@@ -231,7 +233,7 @@ class _BaseCommandLineInterface:
             text += g['choices'][0]['text']
             yield g['choices'][0]['text']
 
-        self.logger.debug(f"answer {text}")
+        LOG.debug(f"answer {text}")
 
     def _check_prompt_limit_context(self):
         # FIXME : How deal with too large prompt such that all the
@@ -239,7 +241,7 @@ class _BaseCommandLineInterface:
         while self._get_n_token(str(self.prompt_hist)) > self.n_ctx:
             chunked_prompt = self.prompt_hist.split("\n")
             poped_prompt = chunked_prompt.pop(1)
-            self.logger.debug(f"Pop the following part: {poped_prompt}")
+            LOG.debug(f"Pop the following part: {poped_prompt}")
             self.prompt_hist = "\n".join(chunked_prompt)
 
     def _get_n_token(self, sentence: str) -> int:
@@ -261,11 +263,11 @@ class _BaseCommandLineInterface:
         if self.verbose:
             print(f"\n\nThe full prompt was:\n\n{self.prompt_hist}\n\n")
 
-        self.logger.debug("<Exit>")
+        LOG.debug("<Exit>")
 
     def reset_prompt(self):
         """ Reset the current prompt history with the `init_prompt`. """
-        self.logger.debug("<Reset prompt>")
+        LOG.debug("<Reset prompt>")
 
         self.prompt_hist = self.init_prompt + "\n"
 
