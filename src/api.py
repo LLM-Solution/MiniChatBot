@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 08:16:45
+# @Last modified time: 2024-10-30 09:35:39
 
 """ Flask API object for MiniChatBot. """
 
@@ -109,16 +109,23 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
 
         return response
 
+    def reset_prompt(self):
+        """ Reset the current prompt history and load `init_prompt`. """
+        LOG.debug("<Reset prompt>")
+        self.prompt_hist = self.init_prompt + "\n"
+
+        LOG.debug("<Load init prompt>")
+        r = self.llm(self.init_prompt, max_tokens=1)
+
+        LOG.debug(f"reset_prompt - output: {r}")
+
 
 if __name__ == "__main__":
+    from config import ROOT
     import logging.config
-    import yaml
 
     # Load logging configuration
-    with open('./logging.ini', 'r') as f:
-        log_config = yaml.safe_load(f.read())
-
-    logging.config.dictConfig(log_config)
+    logging.config.fileConfig(ROOT / 'logging.ini')
 
     debug = True
 
