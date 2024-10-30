@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-24 23:42:59
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-24 23:44:14
+# @Last modified time: 2024-10-25 08:15:59
 
 """ Description. """
 
@@ -13,15 +13,12 @@
 # Third party packages
 
 # Local packages
+from api import MiniChatBotAPI
 
 __all__ = []
 
+# Create MiniChatBotAPI instance
+api_instance = MiniChatBotAPI()
 
-if __name__ == "__main__":
-    from api import MiniChatBotAPI
-
-    # Create MiniChatBotAPI instance
-    api_instance = MiniChatBotAPI()
-
-    # Expose app attribute for Gunicorn
-    app = api_instance.app
+# Expose app attribute for Gunicorn
+app = api_instance.app
