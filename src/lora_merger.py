@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-01-19 06:44:06
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-22 17:19:45
+# @Last modified time: 2024-10-31 08:48:39
 
 """ Script to merge LoRA weights and save the whole model. """
 
@@ -86,12 +86,15 @@ class Main:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Load model
-        self.llm = AutoModelForCausalLM.from_pretrained(original_model_path, **kwargs)
+        self.llm = AutoModelForCausalLM.from_pretrained(original_model_path,
+                                                        **kwargs)
+        LOG.info(f"<Model loaded from {original_model_path}>")
 
         # Merge lora model
         self.llm = PeftModel.from_pretrained(self.llm, lora_weights)
         self.llm = self.llm.merge_and_unload()
-        LOG.info("Trained LoRA weights are loaded and merged")
+        LOG.info(f"<Trained LoRA weights are loaded from {lora_weights} and "
+                 f"merged>")
 
     def __call__(self, output_path):
         # Save model and tokenizer
@@ -102,18 +105,15 @@ class Main:
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_path)
 
-        LOG.info("<Trained model saved and checkpoint deleted>")
+        LOG.info(f"<Trained model saved at {output_path} and checkpoint deleted>")
 
 
 if __name__ == "__main__":
     import logging.config
-    import yaml
+    from config import ROOT
 
     # Load logging configuration
-    with open('./logging.ini', 'r') as f:
-        log_config = yaml.safe_load(f.read())
-
-    logging.config.dictConfig(log_config)
+    logging.config.fileConfig(ROOT / 'logging.ini')
 
     # Get training arguments
     parser = Parser("Merger of LoRA weights.", file=__file__)

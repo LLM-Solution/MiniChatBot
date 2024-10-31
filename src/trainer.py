@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-11-30 10:29:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 15:55:38
+# @Last modified time: 2024-10-31 08:45:05
 
 """ Training MiniChatBot with LoRA method. """
 
@@ -24,7 +24,7 @@ from torch.optim import AdamW
 from transformers import BitsAndBytesConfig
 
 # Local packages
-from config import LOG, TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH, PROMPT
+from .config import LOG, TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH, PROMPT
 # from main import Main
 # from save_load import Checkpoint
 
@@ -54,6 +54,7 @@ EVAL_DATA = [
     },
 ]
 
+
 # begin_context = "[C]"
 # end_context = "[/C]"
 # begin_question = "[Q]"
@@ -65,7 +66,7 @@ end_context = "\n"
 begin_question = "User: "
 end_question = "\n"
 begin_answer = "MiniChatBot: "
-end_answer = "\n"
+end_answer = ".\n"
 
 # new_tokens = [begin_context, end_context, begin_question, end_question,
 #               begin_answer, end_answer]
@@ -84,7 +85,7 @@ class TrainerQA(BasisTrainer):
             f"{end_question}",
             return_tensors='pt',
             add_special_tokens=False,
-        ).input_ids[0, :-1]
+        ).input_ids[0, :]
         self.begin_of_answer = self.tokenizer(
             f"{begin_answer}",
             return_tensors='pt',
@@ -94,7 +95,9 @@ class TrainerQA(BasisTrainer):
             f"{end_answer}",
             return_tensors='pt',
             add_special_tokens=False,
-        ).input_ids[0, :-1]
+        ).input_ids[0, :]
+
+        self.prompt_token_size = len(self.tokenizer(PROMPT).input_ids)
 
         LOG.info("Trainer QA is initiated\n")
 
@@ -124,9 +127,11 @@ class TrainerQA(BasisTrainer):
         """
         for i in range(input_ids.size(0)):
             # Looking for the beginning of the answer part
-            # idx_boa = find_token(self.begin_of_answer, input_ids[i]) + 1
-            idx_boa = find_sequence(self.begin_of_answer, input_ids[i])
-            # idx_boa = find_sequence(self.begin_of_question, input_ids[i])
+            idx_boa = find_sequence(
+                self.begin_of_answer,
+                input_ids[i],
+                self.prompt_token_size,
+            )
 
             # Fallback if end of answer tag is not finded
             if idx_boa is None:
@@ -138,8 +143,11 @@ class TrainerQA(BasisTrainer):
             # include the tag end of the answer
             # idx_eoa = find_token(self.end_of_answer, input_ids[i],
             #                      start=idx_boa) + 1
-            idx_eoa = find_sequence(self.end_of_answer, input_ids[i],
-                                 start=idx_boa)
+            idx_eoa = find_sequence(
+                self.end_of_answer,
+                input_ids[i],
+                start=idx_boa,
+            )
 
             # Fallback if end of answer tag is not finded
             if idx_eoa is None:
@@ -163,6 +171,12 @@ class TrainerQA(BasisTrainer):
 
     def run(self, device: str, checkpoint: bool | Checkpoint):
         for input_ids, attention_mask in self:
+            # for i in range(input_ids.size(0)):
+            #     masked_sentence = input_ids[i, -50:]
+            #     masked_sentence[~attention_mask[i, -50:].to(bool)] = 220
+            #     masked_sentence = self.tokenizer.decode(masked_sentence)
+            #     LOG.info(f"Masked data: {masked_sentence}")
+
             with torch.enable_grad():
                 self.training_step(
                     input_ids.to(device),
@@ -201,51 +215,28 @@ def get_question(question: str):
     return question
 
 
-def formater(question: str, context: str = PROMPT, answer: str = ''):
-    txt = ""
-
-    if context:
-        txt += f"{begin_context}{context}{end_context}"
+def formater(question: str, answer: str = ''):
+    txt = f"{begin_context}{PROMPT}{end_context}"
 
     txt += f"{begin_question}{question}{end_question}{begin_answer}"
 
     if answer:
-        txt += f"{answer}{end_answer}"
+        if answer[-1] == ".":
+            txt += f"{answer}\n"
+
+        else:
+            txt += f"{answer}{end_answer}"
 
     return txt
 
 
 def unformater(data: str) -> tuple[str, str, str]:
-    # context, rest = data[3:].split(f"{end_context}{begin_question}")
-    # question, answer = rest[:-5].split(f"{end_question}{begin_answer}")
-
-    # return {'question': question, 'answer': answer}
     context = data.split(f"{end_context}{begin_question}")[0]
     split_data = data.split(f"{end_question}{begin_answer}")
     answer = split_data[-1]
     question = split_data[-2].split(f"{end_answer}{begin_question}")[-1]
 
     return {'User': question, 'MiniChatBot': answer}
-
-
-def _parse_data(data: dict[str, str]):
-    full_scripts = []
-
-    for args in tqdm(data['data']):
-        for p in args['paragraphs']:
-            context = p['context']
-            for qas in p['qas']:
-                question = get_question(qas['question'])
-                answer = get_answer(qas['answers'])
-
-                # full_scripts.append(formater(context, question, answer))
-                full_scripts.append({
-                    "question": question,
-                    "context": context,
-                    "answer": answer,
-                })
-
-    return full_scripts
 
 
 def parse_data(data: list[dict[str, str]]):
@@ -285,7 +276,6 @@ class Main(LoaderLLM):
         **kwargs
     ):
         self.batch_size = batch_size
-        self.checkpoint = checkpoint
         self.device = device
         self.name = model_path.name
 
@@ -307,7 +297,7 @@ class Main(LoaderLLM):
 
         # Set LoRA parameters
         lora_config = LoraConfig(
-            r=128,  # r=8,
+            r=8,  # r=8,
             lora_alpha=16,  # lora_alpha=16,
             lora_dropout=0.1,  # lora_dropout=0.05,
             bias="none",
@@ -378,7 +368,7 @@ class Main(LoaderLLM):
 
         """
         for args in data:
-            text = formater(args['User'], PROMPT)
+            text = formater(question=args['User'])
             length = len(self.tokenizer(text).input_ids)
 
             ans = generate(
@@ -388,6 +378,8 @@ class Main(LoaderLLM):
                 max_length=length + max_length,
                 device=self.device,
             )
+
+            # Remove initial prompt
             ans = ans[len(PROMPT):]
 
             LOG.info(f"\n{ans}\n\n- Expected answer: {args['MiniChatBot']}\n")
@@ -399,10 +391,8 @@ class Main(LoaderLLM):
         self.data = parse_data(self.data)
         shuffle(self.data)
 
-        # self.eval_data = self.data[:5]
-        # self.data = self.data[5:]
         self.eval_data = EVAL_DATA
-        # self.data = self.data[:25]
+        self.data = self.data[:50]
         self.data = [formater(**kwargs) for kwargs in self.data]
         self.data = shuffle_per_batch(
             self.data,
