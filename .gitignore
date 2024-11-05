@@ -4,6 +4,7 @@
 /Notebooks
 
 # Ignore files
+.env
 data/Arthur_Bernard.json
 data/Business.json
 data/Casual.json
