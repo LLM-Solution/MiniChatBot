@@ -4,26 +4,23 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-18 17:26:54
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-30 08:20:32
+# @Last modified time: 2024-11-02 16:11:39
 
 """ Flask API object. """
 
 # Built-in packages
 from functools import wraps
-from logging import getLogger
 from pathlib import Path
 
 # Third party packages
-from flask import Flask, request, make_response, jsonify, stream_with_context, Response
+from flask import request, make_response, Response
+from pyllmsol.inference._base_api import API as _BaseAPI
 
 # Local packages
 from _base_cli import _BaseCommandLineInterface
 from config import GGUF_MODEL, PROMPT
 
 __all__ = []
-
-
-LOG = getLogger('app')
 
 
 # CORS decorator function
@@ -49,22 +46,17 @@ def cors_required(f):
     return wrapped_function
 
 
-class API:
+class API(_BaseAPI):
     """ Flask API object to run a LLM chatbot.
 
     Parameters
     ----------
-    root : Path, optional
-        Path of the root to loads LLM weights, default is './'.
-    model_path : str, optional
-        Path to the model to load (must be GGUF format). Default is a Mistral
-        7B model.
     lora_path : str, optional
         Path to LoRA weights to load.
     n_ctx : int, optional
-        Max number of tokens in the prompt, default is 4096.
-    add_context : bool, optional
-        If True then add context from embedded docs. Default is False.
+        Max number of tokens in the prompt, default is 32768.
+    debug : bool, optional
+        Debug mode for flask API, default is False.
 
     Methods
     -------
@@ -79,6 +71,11 @@ class API:
        Flask application.
     cli : CommandLineInterface
        Chatbot object.
+    debug : bool, optional
+        If True then don't block app if lock_file already exist. It means
+        several servers can run simultanously.
+    init_prompt : str
+        Initial prompt to feed the LLM in the CLI.
 
     """
 
@@ -86,108 +83,17 @@ class API:
 
     def __init__(
         self,
-        root: Path = Path('.'),
-        model_path: str | Path = GGUF_MODEL,
-        lora_path: str | Path = None,  # "models/ggml-adapter-model.bin",
-        init_prompt: str = PROMPT,
+        lora_path: str | Path = None,
         n_ctx: int = 32768,
         debug: bool = False,
     ):
-        self.init_prompt = init_prompt
-        self.debug = debug
-
-        LOG.debug("Start init Flask API object")
-        self.app = Flask(__name__)
-        self.add_route()
-
-        # Set CLI object
-        lora_path = str(root / lora_path) if lora_path else None
-        self.cli = _BaseCommandLineInterface(
-            root / model_path,
+        super(API, self).__init__(
+            model_path=GGUF_MODEL,
+            init_prompt=PROMPT,
             lora_path=lora_path,
-            init_prompt=self.init_prompt,
             n_ctx=n_ctx,
-            n_gpu_layers=-1,
-            n_threads=None,
+            debug=debug,
         )
-
-        # Add GET and POST to CLI routes
-        self.add_get_cli_route()
-        self.add_post_cli_route()
-
-        LOG.debug("Flask API object is initiated")
-
-    def add_route(self):
-        """ Add classical routes. """
-        @self.app.route("/shutdown", methods=["POST"])
-        def shutdown():
-            """ Shutdown flask API server. """
-            LOG.debug("Shutdown call")
-            func = request.environ.get("werkzeug.server.shutdown")
-
-            if func is None:
-
-                raise RuntimeError("Not running with the Werkzeug Server")
-
-            func()
-
-            return "Server shutting down..."
-
-        @self.app.route("/health", methods=['GET'])
-        def health_check():
-            """ Check status. """
-            LOG.debug("GET health")
-
-            return Response(status=200)
-
-        @self.app.route("/ping", methods=['GET'])
-        def ping():
-            """ Ping the server. """
-            LOG.debug("pong")
-
-            return 'pong'
-
-        @self.app.route("/", methods=['GET'])
-        def index():
-            """ Page index. """
-            LOG.debug("GET index page")
-
-            with open("./index.html", "r") as f:
-                text = f.read()
-
-            return text
-
-    def add_get_cli_route(self):
-        """ Add GET routes to communicate with the CLI. """
-        @self.app.route("/reset_prompt", methods=['GET'])
-        def reset_prompt():
-            """ Reset the prompt of the LLM.
-
-            Examples
-            --------
-            >>> requests.get("http://0.0.0.0:5000/reset_prompt")
-            <Response [200]>
-
-            """
-            self.cli.reset_prompt()
-            LOG.debug(f"GET reset prompt")
-
-            return Response(status=200)
-
-        @self.app.route("/get_prompt", methods=['GET'])
-        def get_prompt():
-            """ Return the prompt of the LLM.
-
-            Examples
-            --------
-            >>> requests.get("http://0.0.0.0:5000/get_prompt")
-            [Q]Who is the president of USA ?[/Q][A]Joe Biden.[/A]
-
-            """
-            prompt = self.cli.prompt_hist.to_json()
-            LOG.debug(f"GET prompt : {prompt}")
-
-            return prompt
 
     def add_post_cli_route(self):
         """ Add POST routes to communicate with the CLI. """
@@ -277,55 +183,13 @@ class API:
             else:
                 return answer
 
-    def run(self, timer=0, **kwargs):
-        """ Start to run the flask API. """
-        if timer > 0:
-            LOG.debug(f"Flask API is running for {timer} seconds")
-            flask_thread = Thread(
-                target=self.app.run,
-                kwargs=kwargs,
-                daemon=True,
-            )
-            flask_thread.start()
-
-            timer_thread = Thread(
-                target=self._timer_to_shutdown,
-                args=(timer,),
-            )
-            timer_thread.start()
-            timer_thread.join()
-
-        else:
-            LOG.debug("Flask API is running")
-            self.app.run(**kwargs)
-
-    def _timer_to_shutdown(self, duration):
-        LOG.debug(f"API will shutdown in {duration}")
-        sleep(duration)
-        LOG.debug("End of timer, API server shutting down")
-        exit(0)
-
-    def __enter__(self):
-        LOG.debug("Enter in control manager")
-        self.lock_file.touch(exist_ok=self.debug)
-
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.lock_file.unlink(missing_ok=self.debug)
-        LOG.debug("Exit of control manager")
-
-        return False
 
 if __name__ == '__main__':
     import logging.config
-    import yaml
+    from config import ROOT
 
     # Load logging configuration
-    with open('./logging.ini', 'r') as f:
-        log_config = yaml.safe_load(f.read())
-
-    logging.config.dictConfig(log_config)
+    logging.config.fileConfig(ROOT / 'logging.ini')
 
     debug = True
 
