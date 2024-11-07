@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-06 10:09:11
+# @Last modified time: 2024-11-07 17:00:52
 
 """ Flask API object for MiniChatBot. """
 
@@ -14,9 +14,10 @@ from logging import getLogger
 from markupsafe import escape
 from random import randint
 import re
+from secrets import token_hex
 
 # Third party packages
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response
 
 # Local packages
 from _base_api import API, cors_required
@@ -25,9 +26,6 @@ from config import GGUF_MODEL, PROMPT
 from utils import send_email_otp
 
 __all__ = []
-
-
-LOG = getLogger('app')
 
 
 class MiniChatBotAPI(API, _BaseCommandLineInterface):
@@ -52,14 +50,16 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             **kwargs,
         )
 
+        # Storage of otp code and tokens
         self.otp_store = {}
+        self.session_tokens = {}
 
         # Set API part
-        LOG.debug("Start init Flask API object")
+        self.logger.debug("Start init Flask API object")
         self.app = Flask(__name__)
         self.add_post_cli_route()
 
-        LOG.debug("Flask API object is initiated")
+        self.logger.debug("Flask API object is initiated")
 
     def add_post_cli_route(self):
         """ Add POST routes to communicate with the CLI. """
@@ -82,10 +82,26 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             Robot: Joe Biden is the president of USA.
 
             """
+            auth_header = request.headers.get('Authorization')
+
+            if not auth_header:
+                self.logger.error(f"Missing Authorization header")
+
+                return {'error': 'Unauthorized'}, 401
+
+            token = auth_header.split(" ")[1]  # "Bearer <token>"
+            email = request.json.get('email')
+
+            if self.session_tokens.get(email) != token:
+                self.logger.error(f"Wrong token: {token}")
+
+                return {'error': 'Unauthorized'}, 401
+
             question = escape(request.json.get("question"))
             stream = request.json.get("stream", True)
             session_id = request.json.get("session_id")
-            LOG.debug(f"ask - session_id: {session_id} - question: {question}")
+            self.logger.debug(f"ask - session_id: {session_id} - question: "
+                              f"{question}")
 
             output = self.ask(question, stream=stream)
 
@@ -99,7 +115,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
 
             if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
 
-                return jsonify({'error': 'Invalid email format'}), 400
+                return {'error': 'Invalid email format'}, 400
 
             otp = str(randint(100000, 999999))
             expiry = datetime.now() + timedelta(minutes=15)
@@ -111,13 +127,13 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
                 self.logger.debug(f"The OTP code {otp} is sent to {email} - "
                                   f"status {response.status_code}")
 
-                return jsonify({'message': 'OTP envoyé'}), 200
+                return {'message': 'OTP sent'}, 200
 
             except Exception as e:
                 self.logger.error(f"Error occurred while sending OTP "
                                   f"{type(e)}: {e}")
 
-                return jsonify({'error': 'Failed to send OTP'}), 500
+                return {'error': 'Failed to send OTP'}, 500
 
         @self.app.route('/verify-otp', methods=['POST', 'OPTIONS'])
         @cors_required
@@ -127,22 +143,38 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             otp = request.json.get('otp')
 
             if email not in self.otp_store:
+                self.logger.error("error 404 - OTP not found")
 
-                return jsonify({'error': 'OTP not found'}), 404
+                return {'error': 'OTP not found'}, 404
 
             elif datetime.now() >= self.otp_store[email]['expiry']:
+                self.logger.error("error 400 - OTP expired")
                 del self.otp_store[email]
 
-                return jsonify({'error': 'OTP expired'}), 400
+                return {'error': 'OTP expired'}, 400
             
             elif self.otp_store[email]['otp'] != otp:
+                self.logger.error("error 400 - Incorrect OTP")
 
-                return jsonify({'error': 'Incorrect OTP'}), 400
+                return {'error': 'Incorrect OTP'}, 400
 
-            else:
-                del self.otp_store[email]
+            # OTP verification succeeded
+            self.logger.debug("OTP verification succeeded")
 
-                return jsonify({'message': 'Verification succeeded'}), 200
+            # Remove OTP code
+            # del self.otp_store[email]
+
+            # Generate authentification token
+            token = token_hex(16)
+            self.session_tokens[email] = token
+            message = {
+                'message': 'Verification succeeded',
+                'token': token,
+            }
+            # FIXME : Remove this logs
+            self.logger.debug(f"Token generated {token}")
+
+            return message, 200
 
     def answer(self, output, stream: bool = False):
         """ Formats and sends the chatbot's response.
@@ -170,26 +202,26 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
 
                     yield chunk
 
-                LOG.debug(f"answer - response: {full_answer}")
+                self.logger.debug(f"answer - response: {full_answer}")
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
             self.prompt_hist += output
-            LOG.debug(f"answer - response: {output}")
+            self.logger.debug(f"answer - response: {output}")
             response = Response(output, content_type='text/plain')
 
         return response
 
     def reset_prompt(self):
         """ Reset the current prompt history and load `init_prompt`. """
-        LOG.debug("<Reset prompt>")
+        self.logger.debug("<Reset prompt>")
         self.prompt_hist = self.init_prompt + "\n"
 
-        LOG.debug("<Load init prompt>")
+        self.logger.debug("<Load init prompt>")
         r = self.llm(f"{self.init_prompt}", max_tokens=1)
 
-        LOG.debug(f"reset_prompt - output: {r}")
+        self.logger.debug(f"reset_prompt - output: {r}")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-18 17:26:54
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-02 16:11:39
+# @Last modified time: 2024-11-07 12:27:27
 
 """ Flask API object. """
 
@@ -31,9 +31,14 @@ def cors_required(f):
             # Preflight request
             response = make_response()
             response.headers.add("Access-Control-Allow-Origin", "*")
-            response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-            response.headers.add("Access-Control-Allow-Methods",
-                                 "POST, OPTIONS, GET")
+            response.headers.add(
+                "Access-Control-Allow-Headers",
+                "Authorization, Content-Type",
+            )
+            response.headers.add(
+                "Access-Control-Allow-Methods",
+                "POST, OPTIONS, GET",
+            )
 
             return response
 
