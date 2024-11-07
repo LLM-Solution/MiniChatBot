@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 17:02:52
+# @Last modified time: 2024-11-07 20:07:23
 
 """ Configuration variables. """
 
@@ -29,6 +29,8 @@ LOG_NO_CONSOLE = getLogger('train_no_console')
 TOKEN_LIMIT = 2048
 # DATA_PATH = Path("./data/LLM_Solutions.json")
 DATA_PATH = ROOT / "data/full_data.json"
+ENV_PATH = ROOT / ".env"
+STORAGE_PATH = ROOT / ".storage"
 
 # Model paths
 MODEL_NAME = ROOT / "models/Llama-3.2-1B"

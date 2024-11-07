@@ -1,3 +1,4 @@
+cryptography>=43.0.3
 flask>=3.0.3
 llama-cpp-python>=0.3.1
 peft>=0.13.2

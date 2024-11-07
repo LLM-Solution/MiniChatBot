@@ -4,20 +4,63 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-05 18:23:21
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-06 00:02:46
+# @Last modified time: 2024-11-07 20:17:16
 
 """ Util functions. """
 
 # Built-in packages
+from json import loads, dump, JSONDecodeError
 
 # Third party packages
+from cryptography.fernet import Fernet
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 # Local packages
-from config import ROOT
+from config import ENV_PATH, STORAGE_PATH
 
 __all__ = []
+
+
+def load_storage():
+    """ Load storage for OTP code and tokens.
+
+    Returns
+    -------
+    dict
+        Loaded storage with key "otp_store" and "session_tokens".
+
+    """
+    try:
+        key = get_env_variables("STORAGE_KEY")
+        fernet = Fernet(key)
+
+        with STORAGE_PATH.open('rb') as f:
+
+            encrypted_data = f.read()
+
+        return loads(fernet.decrypt(encrypted_data).decode())
+
+    except (FileNotFoundError, JSONDecodeError):
+
+        return {"otp_store": {}, "session_tokens": {}}
+
+
+def save_storage(data):
+    """ Save storage for OTP code and tokens.
+
+    Parameters
+    ----------
+    data : dict
+        Storage data.
+
+    """
+    key = get_env_variables("STORAGE_KEY")
+    fernet = Fernet(key)
+    encrypted_data = fernet.encrypt(dumps(data).encode())
+
+    with STORAGE_PATH.open("wb") as f:
+        f.write(encrypted_data)
 
 
 def get_env_variables(name: str) -> str:
@@ -39,9 +82,7 @@ def get_env_variables(name: str) -> str:
         If the requested variable is not found in the `.env` file.
 
     """
-    path = ROOT / ".env"
-
-    with path.open("r") as env_file:
+    with ENV_PATH.open("r") as env_file:
         for line in env_file:
             if line.strip() and not line.startswith("#"):
                 key, value = line.strip().split("=", 1)

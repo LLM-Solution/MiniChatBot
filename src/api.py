@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 18:53:27
+# @Last modified time: 2024-11-07 20:18:11
 
 """ Flask API object for MiniChatBot. """
 
@@ -23,7 +23,7 @@ from flask import Flask, request, Response
 from _base_api import API, cors_required
 from cli import _BaseCommandLineInterface
 from config import GGUF_MODEL, PROMPT
-from utils import send_email_otp
+from utils import load_storage, save_storage, send_email_otp
 
 __all__ = []
 
@@ -51,8 +51,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
         )
 
         # Storage of otp code and tokens
-        self.otp_store = {}
-        self.session_tokens = {}
+        self.load_storage()
 
         # Set API part
         self.logger.debug("Start init Flask API object")
@@ -60,6 +59,20 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
         self.add_post_cli_route()
 
         self.logger.debug("Flask API object is initiated")
+
+    def load_storage(self):
+        """ Load and decrypt OTP code and tokens. """
+        data = load_storage()
+        self.otp_store = data["otp_store"]
+        self.session_tokens = data["session_tokens"]
+
+    def save_storage(self):
+        """ Encrypt and save OTP codes and tokens. """
+        save_storage({
+            "otp_store": self.otp_store,
+            "session_tokens": self.session_tokens,
+        })
+
 
     def add_post_cli_route(self):
         """ Add POST routes to communicate with the CLI. """
@@ -123,6 +136,8 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
 
             try:
                 response = send_email_otp(email, otp)
+                self.save_storage()
+
                 # FIXME : remove OTP code from logs
                 # self.logger.debug(f"The OTP code {otp} is sent to {email} - "
                 #                   f"status {response.status_code}")
@@ -167,6 +182,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             # Generate authentification token
             token = token_hex(16)
             self.session_tokens[email] = token
+            self.save_storage()
             message = {
                 'message': 'Verification succeeded',
                 'token': token,
