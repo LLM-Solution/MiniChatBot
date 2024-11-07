@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 17:00:52
+# @Last modified time: 2024-11-07 18:53:27
 
 """ Flask API object for MiniChatBot. """
 
@@ -21,7 +21,7 @@ from flask import Flask, request, Response
 
 # Local packages
 from _base_api import API, cors_required
-from _base_cli import _BaseCommandLineInterface
+from cli import _BaseCommandLineInterface
 from config import GGUF_MODEL, PROMPT
 from utils import send_email_otp
 
@@ -124,8 +124,8 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
             try:
                 response = send_email_otp(email, otp)
                 # FIXME : remove OTP code from logs
-                self.logger.debug(f"The OTP code {otp} is sent to {email} - "
-                                  f"status {response.status_code}")
+                # self.logger.debug(f"The OTP code {otp} is sent to {email} - "
+                #                   f"status {response.status_code}")
 
                 return {'message': 'OTP sent'}, 200
 
@@ -172,7 +172,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
                 'token': token,
             }
             # FIXME : Remove this logs
-            self.logger.debug(f"Token generated {token}")
+            # self.logger.debug(f"Token generated {token}")
 
             return message, 200
 
