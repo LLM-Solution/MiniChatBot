@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-11-30 10:29:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 08:45:05
+# @Last modified time: 2024-11-07 17:02:02
 
 """ Training MiniChatBot with LoRA method. """
 
@@ -24,9 +24,7 @@ from torch.optim import AdamW
 from transformers import BitsAndBytesConfig
 
 # Local packages
-from .config import LOG, TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH, PROMPT
-# from main import Main
-# from save_load import Checkpoint
+from config import TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH, PROMPT
 
 __all__ = []
 
@@ -97,9 +95,10 @@ class TrainerQA(BasisTrainer):
             add_special_tokens=False,
         ).input_ids[0, :]
 
-        self.prompt_token_size = len(self.tokenizer(PROMPT).input_ids)
+        self.prompt_token_size = len(PROMPT.tokenize(self.tokenizer).input_ids)
+        self.logger.debug(f"Init prompt size: {self.prompt_token_size}")
 
-        LOG.info("Trainer QA is initiated\n")
+        self.logger.info("Trainer QA is initiated\n")
 
     def set_mask(
         self,
@@ -135,8 +134,8 @@ class TrainerQA(BasisTrainer):
 
             # Fallback if end of answer tag is not finded
             if idx_boa is None:
-                LOG.info(f"BOA token not found\n"
-                         f"{self.tokenizer.decode(input_ids[i])}\n")
+                _sentence = self.tokenizer.decode(input_ids[i])
+                self.logger.info(f"BOA token not found\n{_sentence}\n")
                 idx_boa = 0
 
             # Looking for the end of the answer part
@@ -151,8 +150,8 @@ class TrainerQA(BasisTrainer):
 
             # Fallback if end of answer tag is not finded
             if idx_eoa is None:
-                LOG.info(f"EOA token not found\n"
-                         f"{self.tokenizer.decode(input_ids[i, idx_boa:])}\n")
+                _sentence = self.tokenizer.decode(input_ids[i, idx_boa:])
+                self.logger.info(f"EOA token not found\n{_sentence}\n")
                 idx_eoa = attention_mask[i].sum()
 
             # Set mask
@@ -175,7 +174,7 @@ class TrainerQA(BasisTrainer):
             #     masked_sentence = input_ids[i, -50:]
             #     masked_sentence[~attention_mask[i, -50:].to(bool)] = 220
             #     masked_sentence = self.tokenizer.decode(masked_sentence)
-            #     LOG.info(f"Masked data: {masked_sentence}")
+            #     self.logger.info(f"Masked data: {masked_sentence}")
 
             with torch.enable_grad():
                 self.training_step(
@@ -206,13 +205,6 @@ def get_answer(answers: list[str]):
 
     else:
         return f"{', '.join(ans[:-1])} et {ans[-1]}"
-
-
-def get_question(question: str):
-    if question[-1] != "?":
-        question += ' ?'
-
-    return question
 
 
 def formater(question: str, answer: str = ''):
@@ -289,11 +281,11 @@ class Main(LoaderLLM):
         try:
             self.llm = PeftModel.from_pretrained(self.llm, model_path)
             self.llm = self.llm.merge_and_unload()
-            LOG.info("Previous trained LoRA weights are loaded and merged")
+            self.logger.info("Previous trained LoRA weights are loaded and merged")
 
         except Exception as e:
             print(e)
-            LOG.info("There is no previous trained LoRA weights")
+            self.logger.info("There is no previous trained LoRA weights")
 
         # Set LoRA parameters
         lora_config = LoraConfig(
@@ -304,7 +296,7 @@ class Main(LoaderLLM):
             task_type="CAUSAL_LM"
         )
         self.llm = get_peft_model(self.llm, lora_config)
-        LOG.info("LoRA weights initiated")
+        self.logger.info("LoRA weights initiated")
 
         self.print_trainable_parameters()
         self.llm = self.llm.to(self.device)
@@ -326,7 +318,7 @@ class Main(LoaderLLM):
         """
         # Test eval model before training
         if eval_sentences is not None:
-            LOG.info("Eval test before training")
+            self.logger.info("Eval test before training")
             self.eval(*eval_sentences)
 
         # Training
@@ -348,11 +340,11 @@ class Main(LoaderLLM):
             self.checkpoint.save_trained_model(self.llm, path, self.tokenizer)
 
         except AttributeError as e:
-            LOG.error(f"The following error occurs: {type(e)} - {e}")
+            self.logger.error(f"The following error occurs: {type(e)} - {e}")
 
         # Test eval model after training
         if eval_sentences is not None:
-            LOG.info("Eval test after training")
+            self.logger.info("Eval test after training")
             self.eval(*eval_sentences)
 
     def eval(self, *data: dict[str], max_length: int = 32):
@@ -382,7 +374,7 @@ class Main(LoaderLLM):
             # Remove initial prompt
             ans = ans[len(PROMPT):]
 
-            LOG.info(f"\n{ans}\n\n- Expected answer: {args['MiniChatBot']}\n")
+            self.logger.info(f"\n{ans}\n\n- Expected answer: {args['MiniChatBot']}\n")
 
     def process_data(self):
         """ Process and shuffle data. """
@@ -392,7 +384,7 @@ class Main(LoaderLLM):
         shuffle(self.data)
 
         self.eval_data = EVAL_DATA
-        self.data = self.data[:50]
+        # self.data = self.data[:50]
         self.data = [formater(**kwargs) for kwargs in self.data]
         self.data = shuffle_per_batch(
             self.data,
@@ -411,13 +403,13 @@ class Main(LoaderLLM):
             if param.requires_grad:
                 trainable_params += param.numel()
 
-        LOG.info(f"\n\nTrainable params: {trainable_params:,} || All params: "
+        self.logger.info(f"\n\nTrainable params: {trainable_params:,} || All params: "
                  f"{all_param:,} || Trainable: "
                  f"{trainable_params / all_param:.2%}\n\n")
 
 
 if __name__ == "__main__":
-    from config import ROOT
+    from config import LOG, ROOT
     import logging.config
 
     # Load logging configuration
