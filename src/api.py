@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 20:18:11
+# @Last modified time: 2024-11-08 09:22:00
 
 """ Flask API object for MiniChatBot. """
 
@@ -21,32 +21,30 @@ from flask import Flask, request, Response
 
 # Local packages
 from _base_api import API, cors_required
-from cli import _BaseCommandLineInterface
+from cli import CommandLineInterface
 from config import GGUF_MODEL, PROMPT
 from utils import load_storage, save_storage, send_email_otp
 
 __all__ = []
 
 
-class MiniChatBotAPI(API, _BaseCommandLineInterface):
+class MiniChatBotAPI(API, CommandLineInterface):
     def __init__(
         self,
         verbose: bool = False,
         n_ctx: int = 32768,
-        n_threads=6,
+        n_threads=4,
         debug: bool = False,
         **kwargs,
     ):
         self.debug = debug
 
         # Set CLI part
-        _BaseCommandLineInterface.__init__(
+        CommandLineInterface.__init__(
             self,
-            model_path=GGUF_MODEL,
-            init_prompt=PROMPT,
             verbose=verbose,
-            n_ctx=32768,
-            n_threads=6,
+            n_ctx=n_ctx,
+            n_threads=threads,
             **kwargs,
         )
 
@@ -131,7 +129,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
                 return {'error': 'Invalid email format'}, 400
 
             otp = str(randint(100000, 999999))
-            expiry = datetime.now() + timedelta(minutes=15)
+            expiry = (datetime.now() + timedelta(minutes=15)).isoformat()
             self.otp_store[email] = {'otp': otp, 'expiry': expiry}
 
             try:
@@ -162,7 +160,7 @@ class MiniChatBotAPI(API, _BaseCommandLineInterface):
 
                 return {'error': 'OTP not found'}, 404
 
-            elif datetime.now() >= self.otp_store[email]['expiry']:
+            elif str(datetime.now()) >= self.otp_store[email]['expiry']:
                 self.logger.error("error 400 - OTP expired")
                 del self.otp_store[email]
 

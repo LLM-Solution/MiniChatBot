@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-22 17:48:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-06 09:58:29
+# @Last modified time: 2024-11-08 10:01:05
 
 """ Base of Command Line Interface object. """
 
@@ -18,6 +18,7 @@ from typing import Generator
 # Third party packages
 from llama_cpp import Llama
 from pyllmsol.inference._base_cli import _BaseCommandLineInterface
+from config import GGUF_MODEL, PROMPT
 
 # Local packages
 
@@ -28,18 +29,79 @@ LOG = getLogger('cli')
 
 
 class CommandLineInterface(_BaseCommandLineInterface):
-    pass
+    """ Command line interface object to chat with the LLM.
+
+    Parameters
+    ----------
+    lora_path : Path or str, optional
+        Path to load LoRA weights.
+    verbose : bool, optional
+        If True then LLM is run with verbosity. Default is False.
+    n_ctx : int, optional
+        Maximum number of input tokens for LLM, default is 32 768.
+
+    Methods
+    -------
+    __call__
+    answer
+    ask
+    exit
+    reset_prompt
+    run
+
+    Attributes
+    ----------
+    ai_name, user_name : str
+        Respectively the name of AI and of the user.
+    llm : object
+        Large language model.
+    prompt : str
+        Prompt to feed the model. The prompt will be increment with all the
+        conversation, except if you call the `reset_prompt` method.
+    stop : list of str
+        List of paterns to stop the text generation of the LLM.
+    today : str
+        Date of today.
+    verbose : bool
+        Verbosity.
+
+    """
+
+    def __init__(
+        self,
+        lora_path: Path | str = None,
+        verbose: bool = False,
+        n_ctx: int = 32768,
+        n_threads=4,
+        **kwargs,
+    ):
+        super(CommandLineInterface, self).__init__(
+            model_path=GGUF_MODEL,
+            lora_path=lora_path,
+            init_prompt=PROMPT,
+            verbose=verbose,
+            n_ctx=n_ctx,
+            n_threads=n_threads,
+            **kwargs,
+        )
 
 
 if __name__ == "__main__":
-    from config import ROOT, GGUF_MODEL, PROMPT
+    from config import CLIParser, ROOT
     import logging.config
 
-    # Load logging configuration
-    logging.config.fileConfig(ROOT / 'logging.ini')
+    parser = CLIParser(file=__file__)
+    args = parser()
+    print(parser)
 
-    cli = _BaseCommandLineInterface(
-        model_path=GGUF_MODEL,
-        init_prompt=PROMPT,
+    if args.verbose:
+        # Load logging configuration
+        logging.config.fileConfig(ROOT / 'logging.ini')
+
+    cli = CommandLineInterface(
+        lora_path=args.lora_path,
+        verbose=args.verbose,
+        n_ctx=args.n_ctx,
+        n_threads=args.n_threads,
     )
     cli.run()

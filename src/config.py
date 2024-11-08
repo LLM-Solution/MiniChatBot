@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 20:07:23
+# @Last modified time: 2024-11-08 10:01:59
 
 """ Configuration variables. """
 
@@ -14,6 +14,7 @@ from logging import getLogger
 from pathlib import Path
 
 # Third party packages
+from pyllmsol.argparser import _BasisArgParser
 from pyllmsol.prompt import Prompt
 from torch import cuda
 
@@ -23,11 +24,12 @@ __all__ = []
 
 
 # General parameters
-ROOT = Path(".")
 LOG = getLogger('train')
 LOG_NO_CONSOLE = getLogger('train_no_console')
-TOKEN_LIMIT = 2048
-# DATA_PATH = Path("./data/LLM_Solutions.json")
+
+TOKEN_LIMIT = 32_768
+
+ROOT = Path(".")
 DATA_PATH = ROOT / "data/full_data.json"
 ENV_PATH = ROOT / ".env"
 STORAGE_PATH = ROOT / ".storage"
@@ -98,21 +100,48 @@ Let the conversation start below:
 MiniChatBot: Hello, how can I help you ?""")
 
 
+class CLIParser(_BasisArgParser):
+    def __init__(self, file: str = None):
+        super(CLIParser, self).__init__(
+            f"CLI arguments parser",
+            file=file,
+        )
 
-class _BasisParser(ArgumentParser):
-    def __init__(self, description: str, file: str = None):
-        super(_BasisParser, self).__init__(description=description)
-        self.file = file
+    def __call__(
+        self,
+        lora_path: str | Path = None,
+        n_ctx: str = TOKEN_LIMIT,
+        n_threads: int = 4,
+    ):
+        self.add_argument(
+            "--lora_path", "--lora-path",
+            default=lora_path,
+            type=Path,
+            help=(f"Path to load LoRA weights (optional), default is "
+                  f"{lora_path}."),
+        )
+        self.add_argument(
+            "--verbose", "-v",
+            action="store_true",
+            help=f"Flag to set verbosity.",
+        )
+        self.add_argument(
+            "--n_ctx", "--n-ctx",
+            default=n_ctx,
+            type=int,
+            help=f"Maximum number of tokens allowed by the model.",
+        )
+        self.add_argument(
+            "--n_threads", "--n-threads",
+            default=n_threads,
+            type=int,
+            help=f"Number of threads allowed to compute the generation.",
+        )
 
-    def __str__(self) -> str:
-        args = self.parse_args()
-        kw = vars(args)
-        str_args = "\n".join([f"{k:20} = {v}" for k, v in kw.items()])
-
-        return f"\nRun {self.file}\n" + str_args
+        return self.parse_args()
 
 
-class EvalParser(_BasisParser):
+class EvalParser(_BasisArgParser):
     def __init__(self, training_type: str, file: str = None):
         super(EvalParser, self).__init__(
             f"Evaluate LLM on {training_type} data",
@@ -182,7 +211,7 @@ class EvalParser(_BasisParser):
         return self.parse_args()
 
 
-class TrainingParser(_BasisParser):
+class TrainingParser(_BasisArgParser):
     def __init__(self, file: str = None):
         super(TrainingParser, self).__init__(
             f"LLM training",

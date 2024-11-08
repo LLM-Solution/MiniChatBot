@@ -4,12 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-05 18:23:21
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 20:17:16
+# @Last modified time: 2024-11-07 20:40:32
 
 """ Util functions. """
 
 # Built-in packages
-from json import loads, dump, JSONDecodeError
+from json import loads, dumps, JSONDecodeError
 
 # Third party packages
 from cryptography.fernet import Fernet
@@ -93,7 +93,7 @@ def get_env_variables(name: str) -> str:
 
         else:
 
-            raise KeyError(f"The variable {name} does not exist in {path}.")
+            raise KeyError(f"The variable {name} does not exist in {ENV_PATH}.")
 
 
 def send_email_otp(email, otp):
