@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 09:22:00
+# @Last modified time: 2024-11-08 10:42:59
 
 """ Flask API object for MiniChatBot. """
 
@@ -209,33 +209,23 @@ class MiniChatBotAPI(API, CommandLineInterface):
         """
         if stream:
             def generator():
-                full_answer = ""
+                ans = ""
                 for chunk in output:
-                    full_answer += chunk
+                    ans += chunk
                     self.prompt_hist += chunk
 
                     yield chunk
 
-                self.logger.debug(f"answer - response: {full_answer}")
+                self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(ans)}")
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
             self.prompt_hist += output
-            self.logger.debug(f"answer - response: {output}")
+            self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(output)}")
             response = Response(output, content_type='text/plain')
 
         return response
-
-    def reset_prompt(self):
-        """ Reset the current prompt history and load `init_prompt`. """
-        self.logger.debug("<Reset prompt>")
-        self.prompt_hist = self.init_prompt + "\n"
-
-        self.logger.debug("<Load init prompt>")
-        r = self.llm(f"{self.init_prompt}", max_tokens=1)
-
-        self.logger.debug(f"reset_prompt - output: {r}")
 
 
 if __name__ == "__main__":
