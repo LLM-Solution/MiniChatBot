@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 18:43:11
+# @Last modified time: 2024-11-09 19:07:59
 
 """ Flask API object for MiniChatBot. """
 
@@ -125,7 +125,6 @@ class MiniChatBotAPI(API, CommandLineInterface):
 
         # Storage of otp code and tokens
         self.load_storage()
-        self._conv_history = {}
 
         # Set API part
         self.logger.debug("Start init Flask API object")
@@ -209,9 +208,8 @@ class MiniChatBotAPI(API, CommandLineInterface):
             save_message(email, "user", question)
 
             output = self.ask(question, stream=stream)
-            save_message(email, "assistant", output)
 
-            return self.answer(output, stream=stream)
+            return self.answer(output, email, stream=stream)
 
         @self.app.route('/send-otp', methods=['POST', 'OPTIONS'])
         @cors_required
@@ -285,7 +283,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
 
             return message, 200
 
-    def answer(self, output, stream: bool = False):
+    def answer(self, output, email, stream: bool = False):
         """ Formats and sends the chatbot's response.
 
         Parameters
@@ -312,6 +310,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
                     yield chunk
 
                 self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(ans)}")
+                save_message(email, "assistant", output)
 
             response = Response(generator(), content_type='text/event-stream')
 
