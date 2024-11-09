@@ -4,11 +4,12 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-05 18:23:21
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 20:40:32
+# @Last modified time: 2024-11-09 18:42:39
 
 """ Util functions. """
 
 # Built-in packages
+from datetime import datetime
 from json import loads, dumps, JSONDecodeError
 
 # Third party packages
@@ -17,7 +18,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 # Local packages
-from config import ENV_PATH, STORAGE_PATH
+from config import ENV_PATH, STORAGE_PATH, CONV_HISTORY_PATH
 
 __all__ = []
 
@@ -120,6 +121,24 @@ def send_email_otp(email, otp):
     sg = SendGridAPIClient(sendgrid_api_key)
 
     return sg.send(message)
+
+
+def save_message(identifiant: str, role: str, message: str):
+    path = CONV_HISTORY_PATH / f"{identifiant}.json"
+
+    if path.exists():
+        conv = loads(path.read_text(encoding='utf-8'))
+
+    else:
+        conv = []
+
+    conv.append({
+        "timestamp": datetime.now().isoformat(),
+        "role": role,
+        "message": message,
+    })
+
+    path.write_text(dumps(conv), encoding='utf-8')
 
 
 if __name__ == "__main__":

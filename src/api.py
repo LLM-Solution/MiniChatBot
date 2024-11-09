@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 15:34:00
+# @Last modified time: 2024-11-09 18:43:11
 
 """ Flask API object for MiniChatBot. """
 
@@ -24,7 +24,7 @@ from pyllmsol.prompt import Prompt
 from _base_api import API, cors_required
 from cli import CommandLineInterface
 from config import GGUF_MODEL, PROMPT
-from utils import load_storage, save_storage, send_email_otp
+from utils import load_storage, save_storage, send_email_otp, save_message
 
 __all__ = []
 
@@ -53,8 +53,10 @@ class MiniChatBotAPI(API, CommandLineInterface):
     answer
     ask
     exit
+    load_storage
     reset_prompt
     run
+    save_storage
 
     Attributes
     ----------
@@ -123,6 +125,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
 
         # Storage of otp code and tokens
         self.load_storage()
+        self._conv_history = {}
 
         # Set API part
         self.logger.debug("Start init Flask API object")
@@ -201,10 +204,12 @@ class MiniChatBotAPI(API, CommandLineInterface):
             question = escape(request.json.get("question"))
             stream = request.json.get("stream", True)
             session_id = request.json.get("session_id")
-            self.logger.debug(f"ask - session_id: {session_id} - question: "
+            self.logger.debug(f"ask - email: {email} - question: "
                               f"{question}")
+            save_message(email, "user", question)
 
             output = self.ask(question, stream=stream)
+            save_message(email, "assistant", output)
 
             return self.answer(output, stream=stream)
 

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 11:33:23
+# @Last modified time: 2024-11-09 18:44:44
 
 """ Configuration variables. """
 
@@ -34,6 +34,7 @@ ROOT = Path("../MiniChatBot")
 DATA_PATH = ROOT / "data/full_data.json"
 ENV_PATH = ROOT / ".env"
 STORAGE_PATH = ROOT / ".storage"
+CONV_HISTORY_PATH = ROOT / "_conv_history"
 
 # Model paths
 MODEL_NAME = ROOT / "models/Llama-3.2-1B"
