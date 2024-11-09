@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 10:56:30
+# @Last modified time: 2024-11-09 15:34:00
 
 """ Flask API object for MiniChatBot. """
 
@@ -76,17 +76,9 @@ class MiniChatBotAPI(API, CommandLineInterface):
     -----
     API Routes:
 
-    - **POST** `/shutdown`
-        - Description: Shuts down the Flask API server.
-        - Response: Returns the message "Server shutting down...".
-
     - **GET** `/health`
         - Description: Checks the health/status of the server.
         - Response: Returns HTTP status code 200.
-
-    - **GET** `/ping`
-        - Description: Pings the server to confirm it is running.
-        - Response: Returns the string "pong".
 
     - **POST** `/ask`
         - Description: Allows the user to ask a question to the LLM.
@@ -153,6 +145,22 @@ class MiniChatBotAPI(API, CommandLineInterface):
             "session_tokens": self.session_tokens,
         })
 
+    def add_route(self):
+        """ Add classical routes. """
+        @self.app.route("/health", methods=['GET'])
+        @cors_required
+        def health_check():
+            """ Check status.
+
+            Returns
+            -------
+            flask.Response
+                Status code 200.
+
+            """
+            self.logger.debug("GET health")
+
+            return Response(status=200)
 
     def add_post_cli_route(self):
         """ Add POST routes to communicate with the CLI. """
