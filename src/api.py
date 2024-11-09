@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-08 10:42:59
+# @Last modified time: 2024-11-09 10:56:30
 
 """ Flask API object for MiniChatBot. """
 
@@ -18,6 +18,7 @@ from secrets import token_hex
 
 # Third party packages
 from flask import Flask, request, Response
+from pyllmsol.prompt import Prompt
 
 # Local packages
 from _base_api import API, cors_required
@@ -29,6 +30,86 @@ __all__ = []
 
 
 class MiniChatBotAPI(API, CommandLineInterface):
+    """ MiniChatBot API object to chat with the retrained LLM.
+
+    Parameters
+    ----------
+    lora_path : Path or str, optional
+        Path to load LoRA weights.
+    verbose : bool, optional
+        If True then LLM is run with verbosity. Default is False.
+    n_ctx : int, optional
+        Maximum number of input tokens for LLM, default is 32 768.
+    n_threads : int, optional
+        Number of threads to compute the inference.
+    debug : bool, optional
+        Debug mode for flask API.
+    **kwargs
+        Keyword arguments for llama_cpp.Llama object, cf documentation.
+
+    Methods
+    -------
+    __call__
+    answer
+    ask
+    exit
+    reset_prompt
+    run
+
+    Attributes
+    ----------
+    ai_name, user_name : str
+        Respectively the name of AI and of the user.
+    llm : object
+        Large language model.
+    prompt : str
+        Prompt to feed the model. The prompt will be increment with all the
+        conversation, except if you call the `reset_prompt` method.
+    stop : list of str
+        List of paterns to stop the text generation of the LLM.
+    today : str
+        Date of today.
+    verbose : bool
+        Verbosity.
+
+    Notes
+    -----
+    API Routes:
+
+    - **POST** `/shutdown`
+        - Description: Shuts down the Flask API server.
+        - Response: Returns the message "Server shutting down...".
+
+    - **GET** `/health`
+        - Description: Checks the health/status of the server.
+        - Response: Returns HTTP status code 200.
+
+    - **GET** `/ping`
+        - Description: Pings the server to confirm it is running.
+        - Response: Returns the string "pong".
+
+    - **POST** `/ask`
+        - Description: Allows the user to ask a question to the LLM.
+        - Headers: `Authorization: Bearer <token>`
+        - Body: `{"question": "Your question here", "stream": true/false,
+            "session_id": "<session_id>"}`
+        - Response: Returns the LLM's response, either streamed or as a full
+            response.
+
+    - **POST** `/send-otp`
+        - Description: Sends an OTP to the provided email.
+        - Body: `{"email": "user@example.com"}`
+        - Response: Confirms that the OTP was sent or returns an error if the
+            email format is invalid.
+
+    - **POST** `/verify-otp`
+        - Description: Verifies the OTP code provided by the user.
+        - Body: `{"email": "user@example.com", "otp": "123456"}`
+        - Response: Returns a success message with an authentication token if
+            the OTP is correct, or an error if not.
+
+    """
+
     def __init__(
         self,
         verbose: bool = False,
@@ -44,7 +125,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
             self,
             verbose=verbose,
             n_ctx=n_ctx,
-            n_threads=threads,
+            n_threads=n_threads,
             **kwargs,
         )
 
@@ -54,6 +135,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
         # Set API part
         self.logger.debug("Start init Flask API object")
         self.app = Flask(__name__)
+        self.add_route()
         self.add_post_cli_route()
 
         self.logger.debug("Flask API object is initiated")
