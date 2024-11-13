@@ -1,6 +1,8 @@
 cryptography>=43.0.3
 flask>=3.0.3
 llama-cpp-python>=0.3.1
+matplotlib>=3.9.2
+pandas>=2.2.3
 peft>=0.13.2
 pyllmsol>=0.1.0
 sendgrid>=6.11.0

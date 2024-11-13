@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-11-30 10:29:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-07 17:02:02
+# @Last modified time: 2024-11-13 17:22:57
 
 """ Training MiniChatBot with LoRA method. """
 
@@ -16,6 +16,7 @@ from tqdm import tqdm
 # Third party packages
 from peft import get_peft_model, LoraConfig, PeftModel
 from pyllmsol import Trainer as BasisTrainer
+from pyllmsol.prompt import Prompt
 from pyllmsol.training.checkpoint import Checkpoint, LoaderLLM
 from pyllmsol.training.utils import (find_token, find_sequence, generate,
                                      set_mask, shuffle_per_batch)
@@ -24,10 +25,13 @@ from torch.optim import AdamW
 from transformers import BitsAndBytesConfig
 
 # Local packages
-from config import TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH, PROMPT
+from config import (TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH,
+                    PROMPT_PATH)
 
 __all__ = []
 
+
+PROMPT = Prompt.from_text(PROMPT_PATH / "long_prompt.txt")
 
 EVAL_DATA = [
     {
@@ -95,7 +99,9 @@ class TrainerQA(BasisTrainer):
             add_special_tokens=False,
         ).input_ids[0, :]
 
-        self.prompt_token_size = len(PROMPT.tokenize(self.tokenizer).input_ids)
+        PROMPT.set_tokenizer(self.tokenizer)
+        self.prompt_token_size = PROMPT.get_n_tokens()
+        # self.prompt_token_size = len(self.tokenizer(str(PROMPT)).input_ids)
         self.logger.debug(f"Init prompt size: {self.prompt_token_size}")
 
         self.logger.info("Trainer QA is initiated\n")
@@ -183,7 +189,7 @@ class TrainerQA(BasisTrainer):
                 )
 
             if checkpoint:
-                data = self._data_browser.remaining_data()
+                data = self.dataset.remaining_data()
                 data = [unformater(arg) for arg in data]
                 checkpoint(self.llm, data, tokenizer=self.tokenizer)
 
@@ -208,7 +214,7 @@ def get_answer(answers: list[str]):
 
 
 def formater(question: str, answer: str = ''):
-    txt = f"{begin_context}{PROMPT}{end_context}"
+    txt = f"{begin_context}{str(PROMPT)}{end_context}"
 
     txt += f"{begin_question}{question}{end_question}{begin_answer}"
 
@@ -317,7 +323,7 @@ class Main(LoaderLLM):
 
         """
         # Test eval model before training
-        if eval_sentences is not None:
+        if eval_sentences:
             self.logger.info("Eval test before training")
             self.eval(*eval_sentences)
 
@@ -342,6 +348,8 @@ class Main(LoaderLLM):
         except AttributeError as e:
             self.logger.error(f"The following error occurs: {type(e)} - {e}")
 
+            raise e
+
         # Test eval model after training
         if eval_sentences is not None:
             self.logger.info("Eval test after training")
@@ -361,6 +369,7 @@ class Main(LoaderLLM):
         """
         for args in data:
             text = formater(question=args['User'])
+            self.logger.info(f"User: {args['User']}")
             length = len(self.tokenizer(text).input_ids)
 
             ans = generate(

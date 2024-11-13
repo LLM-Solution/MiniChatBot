@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 19:07:59
+# @Last modified time: 2024-11-10 09:58:46
 
 """ Flask API object for MiniChatBot. """
 
@@ -258,7 +258,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
                 del self.otp_store[email]
 
                 return {'error': 'OTP expired'}, 400
-            
+
             elif self.otp_store[email]['otp'] != otp:
                 self.logger.error("error 400 - Incorrect OTP")
 
@@ -310,7 +310,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
                     yield chunk
 
                 self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(ans)}")
-                save_message(email, "assistant", output)
+                save_message(email, "assistant", ans)
 
             response = Response(generator(), content_type='text/event-stream')
 
