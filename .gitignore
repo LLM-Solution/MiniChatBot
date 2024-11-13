@@ -3,17 +3,10 @@
 /logs
 /llama.cpp
 /Notebooks
+/data
 
 # Ignore files
 .env
-data/Arthur_Bernard.json
-data/Business.json
-data/Casual.json
-data/LLM.json
-data/LLM_Solutions.json
-data/MiniChatBot.json
-data/Out_of_Scope.json
-data/Service_Offering.json
 
 # Ignore extensions
 *.pyc
