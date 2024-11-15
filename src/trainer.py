@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-11-30 10:29:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-13 17:22:57
+# @Last modified time: 2024-11-15 10:29:28
 
 """ Training MiniChatBot with LoRA method. """
 
@@ -412,9 +412,9 @@ class Main(LoaderLLM):
             if param.requires_grad:
                 trainable_params += param.numel()
 
-        self.logger.info(f"\n\nTrainable params: {trainable_params:,} || All params: "
-                 f"{all_param:,} || Trainable: "
-                 f"{trainable_params / all_param:.2%}\n\n")
+        self.logger.info(f"\n\nTrainable params: {trainable_params:,} || All "
+                         f"params: {all_param:,} || Trainable: "
+                         f"{trainable_params / all_param:.2%}\n\n")
 
 
 if __name__ == "__main__":
