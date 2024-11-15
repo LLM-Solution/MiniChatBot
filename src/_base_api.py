@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-18 17:26:54
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-09 10:57:43
+# @Last modified time: 2024-11-15 12:24:18
 
 """ Flask API object. """
 
@@ -18,7 +18,7 @@ from pyllmsol.inference._base_api import API as _BaseAPI
 
 # Local packages
 from cli import _BaseCommandLineInterface
-from config import GGUF_MODEL, PROMPT
+from config import GGUF_MODEL
 
 __all__ = []
 

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 16:19:12
+# @Last modified time: 2024-11-15 12:11:16
 
 """ Configuration variables. """
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Third party packages
 from pyllmsol.argparser import _BasisArgParser
-from pyllmsol.prompt import Prompt
+from pyllmsol.data.prompt import Prompt
 from torch import cuda
 
 # Local packages
@@ -38,7 +38,7 @@ CONV_HISTORY_PATH = ROOT / "_conv_history"
 PROMPT_PATH = ROOT / "Prompts"
 
 # Model paths
-MODEL_NAME = ROOT / "models/Llama-3.2-1B"
+MODEL_NAME = ROOT / "models/Llama-3.2-1B-Instruct"
 ORIGINAL_MODEL = MODEL_NAME
 LORA_WEIGHTS = ROOT / "models/LoRA_weights_MiniChatBot"
 MODEL_PATH = ROOT / "models/MiniChatBot-1.0-1B/"
@@ -47,7 +47,7 @@ MODEL_PATH = ROOT / "models/MiniChatBot-1.0-1B/"
 GGUF_MODEL = ROOT / "models/Llama-3.2-1B-Instruct.Q8_0.gguf"
 # GGUF_MODEL = ROOT / "models/Llama-3.2-1B.Q5_K_S.gguf"
 # GGUF_MODEL = ROOT / "models/SmolLM2-1.7B.Q4_K_S.gguf"
-
+SAVE_MODEL_PATH = ROOT / "models/MiniChatBot-1B-Instruct"
 
 # Training parameters
 BATCH_SIZE = 1

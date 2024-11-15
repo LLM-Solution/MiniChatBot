@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-23 16:25:55
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-10 09:58:46
+# @Last modified time: 2024-11-15 12:23:57
 
 """ Flask API object for MiniChatBot. """
 
@@ -18,12 +18,12 @@ from secrets import token_hex
 
 # Third party packages
 from flask import Flask, request, Response
-from pyllmsol.prompt import Prompt
+from pyllmsol.data.prompt import Prompt
 
 # Local packages
 from _base_api import API, cors_required
 from cli import CommandLineInterface
-from config import GGUF_MODEL, PROMPT
+from config import GGUF_MODEL
 from utils import load_storage, save_storage, send_email_otp, save_message
 
 __all__ = []

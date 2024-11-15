@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-22 17:48:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 18:42:19
+# @Last modified time: 2024-11-15 12:19:41
 
 """ Base of Command Line Interface object. """
 
@@ -18,7 +18,7 @@ from typing import Generator
 # Third party packages
 from llama_cpp import Llama
 from pyllmsol.inference._base_cli import _BaseCommandLineInterface
-from pyllmsol.prompt import Prompt
+from pyllmsol.data.prompt import Prompt
 
 # Local packages
 from config import GGUF_MODEL, PROMPT_PATH
