@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-12 16:25:42
+# @Last modified time: 2024-11-15 11:48:34
 
 """ CLI objects for instruct models. """
 
@@ -14,9 +14,8 @@ from time import strftime
 from typing import Generator
 
 # Third party packages
+from pyllmsol.data.chat import Chat
 from pyllmsol.inference.cli_instruct import InstructCLI as BaseInstructCLI
-from pyllmsol.prompt import Prompt
-from pyllmsol.prompt_instruct import PromptInstruct
 
 # Local packages
 from config import GGUF_MODEL, PROMPT_PATH
@@ -24,7 +23,7 @@ from config import GGUF_MODEL, PROMPT_PATH
 __all__ = []
 
 
-PROMPT = PromptInstruct.from_jsonl(PROMPT_PATH / "long_prompt.jsonl")
+# PROMPT = Chat.from_jsonl(PROMPT_PATH / "short_prompt.jsonl")
 
 
 class InstructCLI(BaseInstructCLI):
@@ -71,7 +70,7 @@ class InstructCLI(BaseInstructCLI):
 
     """
 
-    PromptFactory = PromptInstruct
+    PromptFactory = Chat
 
     def __init__(
         self,
@@ -84,12 +83,17 @@ class InstructCLI(BaseInstructCLI):
         super(InstructCLI, self).__init__(
             model_path=GGUF_MODEL,
             lora_path=lora_path,
-            init_prompt=PROMPT,
+            # init_prompt=PROMPT,
+            init_prompt=PROMPT_PATH / "short_prompt.jsonl",
             verbose=verbose,
             n_ctx=n_ctx,
             n_threads=n_threads,
             **kwargs,
         )
+
+    def set_init_prompt(self, json_path: Path):
+        tokenizer = self.llm.tokenizer()
+        self.init_prompt = Chat.from_jsonl(json_path, tokenizer=tokenizer)
 
 
 if __name__ == "__main__":
