@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-15 12:16:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 12:24:43
+# @Last modified time: 2024-11-19 17:23:13
 
 """ Flask API object for MiniChatBot. """
 
@@ -304,17 +304,17 @@ class MiniChatBotAPI(API, CommandLineInterface):
                 ans = ""
                 for chunk in output:
                     ans += chunk
-                    self.prompt_hist += chunk
 
                     yield chunk
 
+                self.prompt_hist['assistant'] = ans
                 self.logger.debug(f"ANSWER - {self.ai_name} : {ans}")
                 save_message(email, "assistant", ans)
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
-            self.prompt_hist += output
+            self.prompt_hist['assistant'] = output
             self.logger.debug(f"ANSWER - {self.ai_name} : {output}")
             response = Response(output, content_type='text/plain')
 
