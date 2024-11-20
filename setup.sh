@@ -3,7 +3,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-20 10:56:00
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-20 14:44:28
+# @Last modified time: 2024-11-20 17:49:19
 
 # Stop on errors
 set -e
@@ -16,14 +16,22 @@ RESET="\033[0m"
 install_gpu_drivers() {
   if lspci | grep -i nvidia; then
     echo -e "${GREEN}NVIDIA GPU detected. Installing drivers and CUDA...${RESET}"
-    sudo apt update
-    sudo apt install -y nvidia-driver-535
-    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin
-    sudo mv cuda-ubuntu2404.pin /etc/apt/preferences.d/cuda-repository-pin-600
-    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub
-    sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/ /"
-    sudo apt update
-    sudo apt install -y cuda
+
+    # # Automatically install recommended NVIDIA drivers
+    # sudo apt update
+    # sudo apt install -y ubuntu-drivers-common
+    # sudo ubuntu-drivers autoinstall
+
+    # # Add CUDA repository
+    # echo -e "${GREEN}Adding CUDA repository...${RESET}"
+    # sudo mkdir -p /etc/apt/keyrings
+    # wget -qO- https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub | sudo gpg --dearmor -o /etc/apt/keyrings/cuda-keyring.gpg
+    # echo "deb [signed-by=/etc/apt/keyrings/cuda-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/ /" | sudo tee /etc/apt/sources.list.d/cuda.list
+
+    # # Install CUDA
+    # sudo apt update
+    # sudo apt install -y cuda
+
     echo -e "${GREEN}CUDA installation complete.${RESET}"
   else
     echo -e "${GREEN}No NVIDIA GPU detected. Skipping GPU drivers installation.${RESET}"
@@ -34,7 +42,7 @@ install_gpu_drivers() {
 install_pytorch() {
   if lspci | grep -i nvidia; then
     echo -e "${GREEN}Installing PyTorch with GPU support...${RESET}"
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    pip install torch torchvision torchaudio
   else
     echo -e "${GREEN}Installing PyTorch for CPU...${RESET}"
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
@@ -43,7 +51,8 @@ install_pytorch() {
 
 # Update system
 echo -e "${GREEN}Updating system...${RESET}"
-sudo apt update && sudo apt upgrade -y
+sudo apt update
+sudo apt upgrade -y
 
 # Install basic dependencies
 echo -e "${GREEN}Installing system dependencies...${RESET}"
