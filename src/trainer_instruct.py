@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-13 16:23:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 12:32:18
+# @Last modified time: 2024-11-21 18:36:55
 
 """ Description. """
 
@@ -24,7 +24,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Local packages
 from config import (TrainingParser, ACCUMULATION_STEPS, LR, DATA_PATH,
-                    PROMPT_PATH, SAVE_MODEL_PATH)
+                    PROMPT_PATH, LORA_WEIGHTS)
 
 __all__ = []
 
@@ -59,6 +59,7 @@ class Main(_Base):
         model_path: Path,
         batch_size: int,
         data_path: Path,
+        lora_weight_path: Path,
         checkpoint: bool | Checkpoint,
         device: str,
         **kwargs
@@ -71,6 +72,7 @@ class Main(_Base):
             model_path=model_path,
             batch_size=batch_size,
             data_path=data_path,
+            lora_weight_path=lora_weight_path,
             checkpoint=checkpoint,
             device=device,
             **kwargs,
@@ -86,7 +88,7 @@ class Main(_Base):
         self.load_model(model_path, **kwargs)
         self.load_data(data_path, batch_size=batch_size)
 
-
+        self.lora_weight_path = lora_weight_path
         # Load LoRA parameters (if exists)
         # try:
         #     self.llm = PeftModel.from_pretrained(self.llm, model_path)
@@ -130,10 +132,12 @@ class Main(_Base):
 
             trainer.run(device=self.device, checkpoint=self.checkpoint)
 
-            # Save trained model
-            # path = Path("./models/MiniChatBot-1B")
-            path = SAVE_MODEL_PATH
-            self.checkpoint.save_trained_model(self.llm, path, self.tokenizer)
+            # Save lora weight
+            self.checkpoint.save_trained_model(
+                self.llm,
+                self.lora_weight_path,
+                self.tokenizer,
+            )
 
         except AttributeError as e:
             self.logger.error(f"The following error occurs: {type(e)} - {e}")
@@ -149,7 +153,7 @@ class Main(_Base):
             eval_question = eval_data.items.pop()
             data = (self.init_prompt + eval_question)['assistant']
             self.logger.info(f"Question: {eval_question.items[-1].content}")
-            inputs = torch.tensor([data.tokens])
+            inputs = torch.tensor([data.tokens], device=self.device)
 
             generated_encoded = self.llm.generate(
                 inputs=inputs,
@@ -245,6 +249,6 @@ if __name__ == "__main__":
     else:
         checkpoint = False
 
-    main = Main(args.model, args.batch_size, args.data_path, checkpoint,
-                args.device)
+    main = Main(args.model, args.batch_size, args.data_path, args.lora_weights,
+                checkpoint, args.device)
     main.run()

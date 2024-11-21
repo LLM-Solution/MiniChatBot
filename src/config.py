@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 12:11:16
+# @Last modified time: 2024-11-21 18:45:54
 
 """ Configuration variables. """
 
@@ -29,6 +29,7 @@ LOG_NO_CONSOLE = getLogger('train_no_console')
 
 TOKEN_LIMIT = 32_768
 
+# General path config
 ROOT = Path("../MiniChatBot")
 # ROOT = Path("/root/MiniChatBot/")
 DATA_PATH = ROOT / "data/full_data.json"
@@ -37,22 +38,25 @@ STORAGE_PATH = ROOT / ".storage"
 CONV_HISTORY_PATH = ROOT / "_conv_history"
 PROMPT_PATH = ROOT / "Prompts"
 
+# Models name parameters
+MODEL_NAME = "Llama-3.2"
+MODEL_SIZE = "1B"
+IS_INSTRUCT = True
+INSTRUCT = "-Instruct" if IS_INSTRUCT else ""
+TRAINED_MODEL = "MiniChatBot-1.0"
+
 # Model paths
-MODEL_NAME = ROOT / "models/Llama-3.2-1B-Instruct"
+MODEL_NAME = ROOT / f"models/{MODEL_NAME}-{MODEL_SIZE}{INSTRUCT}"
+GGUF_MODEL = ROOT / f"models/{MODEL_NAME}-{MODEL_SIZE}{INSTRUCT}.Q8_0.gguf"
 ORIGINAL_MODEL = MODEL_NAME
-LORA_WEIGHTS = ROOT / "models/LoRA_weights_MiniChatBot"
-MODEL_PATH = ROOT / "models/MiniChatBot-1.0-1B/"
-# GGUF_MODEL = ROOT / "models/MiniChatBot-1.0-1B.gguf"
-# GGUF_MODEL = ROOT / "models/Llama-3.2-1B.f16.gguf"
-GGUF_MODEL = ROOT / "models/Llama-3.2-1B-Instruct.Q8_0.gguf"
-# GGUF_MODEL = ROOT / "models/Llama-3.2-1B.Q5_K_S.gguf"
-# GGUF_MODEL = ROOT / "models/SmolLM2-1.7B.Q4_K_S.gguf"
-SAVE_MODEL_PATH = ROOT / "models/MiniChatBot-1B-Instruct"
+LORA_WEIGHTS = ROOT / f"models/LoRA_{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}"
+MODEL_PATH = ROOT / f"models/{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}/"
+SAVE_MODEL_PATH = ROOT / f"models/{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}"
 
 # Training parameters
 BATCH_SIZE = 1
 ACCUMULATION_STEPS = 8
-LR = 5e-6 # 5e-5
+LR = 5e-5 # 5e-5
 # 1e-4 => bad results
 DEVICE = 'cuda:0' if cuda.is_available() else 'cpu'
 
@@ -62,7 +66,7 @@ CP_PATH = ROOT / "checkpoint/"
 CP_TIMESTEP = 1 * 5 * 60
 
 # Evaluation parameters
-MAX_LENGTH = 32
+MAX_LENGTH = 64
 PATH_TO_SAVE_OUTPUT = ROOT / "data/output.json"
 
 
@@ -188,6 +192,7 @@ class TrainingParser(_BasisArgParser):
         self,
         model_name: str = MODEL_NAME,
         data_path: str | Path = DATA_PATH,
+        lora_weights: str | Path = LORA_WEIGHTS,
         batch_size: int = BATCH_SIZE,
         checkpoint: bool = CHECKPOINT,
         cp_timestep: int = CP_TIMESTEP,
@@ -200,14 +205,18 @@ class TrainingParser(_BasisArgParser):
             type=Path,
             help=f"Set model name available on HuggingFace or model path. "
                  f"Default is {model_name}",
-            # dest="Model",
         )
         self.add_argument(
             "--data_path", "--data-path",
             default=data_path,
             type=Path,
             help=f"Path to load training data, default is {data_path}",
-            # dest="Data path"
+        )
+        self.add_argument(
+            "--lora_weights", "--lora-weights",
+            default=lora_weights,
+            type=Path,
+            help=f"Path to save lora weights, default is {lora_weights}",
         )
         self.add_argument(
             "--batch_size", "--batch-size",
