@@ -1,5 +1,8 @@
-install:
+setup:
 	bash setup.py
+
+install_gpu:
+	sudo bash install_gpu.sh
 
 run:
 	source ~/venv/bin/activate
