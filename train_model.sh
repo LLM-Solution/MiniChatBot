@@ -3,7 +3,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-21 16:40:18
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 16:56:50
+# @Last modified time: 2024-11-21 18:05:27
 # Train and quantize the MiniChatBot model
 
 set -e  # Stop on error
@@ -16,7 +16,8 @@ NC='\033[0m' # No Color
 
 SIZE="1B"
 
-MODEL_URL="https://huggingface.co/meta-llama/Llama-3.2-${SIZE}-Instruct/tree/main"
+# MODEL_URL="https://huggingface.co/meta-llama/Llama-3.2-${SIZE}-Instruct/tree/main"
+MODEL_URL="git@hf.co:meta-llama/Llama-3.2-${SIZE}"
 MODEL_DIR="./models/Llama-3.2-${SIZE}-Instruct/"
 LORA_WEIGHTS="./models/LoRA_weights_MiniChatBot-1.0-${SIZE}/"
 # TRAINED_MODEL_DIR="./models/MiniChatBot-1.0-${SIZE}/"
@@ -25,8 +26,35 @@ GGUF_MODEL="./models/MiniChatBot-1.0-${SIZE}.gguf"
 
 echo -e "${YELLOW}Starting training pipeline...${NC}"
 
+# Create logs directory
+LOG_DIR="./logs"
+
+if [ ! -d "$LOG_DIR" ]; then
+    echo -e "${YELLOW}Directory $LOG_DIR does not exist. Creating it...${NC}"
+    mkdir -p "$LOG_DIR"
+else
+    echo -e "${GREEN}Directory $LOG_DIR already exists.${NC}"
+fi
+
 # Step 1: Download initial model if not exists
 if [ ! -d "$MODEL_DIR" ]; then
+    echo -e "${RED}Model does not exist, please downloading it manually.${NC}"
+    exit 1
+
+    # Check if git-lfs is installed
+    if ! command -v git-lfs &>/dev/null; then
+        echo -e "${RED}git-lfs is not installed. Installing it...${NC}"
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            sudo apt update && sudo apt install -y git-lfs
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+            brew install git-lfs
+        else
+            echo -e "${RED}Please install git-lfs manually.${NC}"
+            exit 1
+        fi
+        git lfs install
+    fi
+
     echo -e "${YELLOW}Downloading Llama-3.2-${SIZE}-Instruct model...${NC}"
     git lfs install
     git clone "$MODEL_URL" "$MODEL_DIR"

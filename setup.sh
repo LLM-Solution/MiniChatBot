@@ -3,7 +3,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-20 10:56:00
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 12:33:06
+# @Last modified time: 2024-11-21 18:05:19
 
 # Stop on errors
 set -e
@@ -52,7 +52,8 @@ check_or_clone_repo() {
   REPO_DIR=$2
 
   if [ -d "$REPO_DIR" ]; then
-    echo -e "${YELLOW}Repository $REPO_DIR already exists. Pulling latest changes...${NC}"
+    echo -e "${GREEN}Repository $REPO_DIR already exists.${NC}"
+    echo -e "${YELLOW}Pulling latest changes...${NC}"
     cd "$REPO_DIR" && git pull && cd ..
   else
     echo -e "${YELLOW}Cloning repository $REPO_URL...${NC}"
@@ -65,12 +66,22 @@ check_or_create_dir() {
   DIR=$1
 
   if [ -d "$DIR" ]; then
-    echo -e "${YELLOW}Directory $DIR already exists. Skipping creation.${NC}"
+    echo -e "${GREEN}Directory $DIR already exists. Skipping creation.${NC}"
   else
     echo -e "${YELLOW}Creating directory $DIR...${NC}"
     mkdir -p "$DIR"
   fi
 }
+
+# Create logs directory
+LOG_DIR="./src/logs"
+
+if [ ! -d "$LOG_DIR" ]; then
+    echo -e "${YELLOW}Directory $LOG_DIR does not exist. Creating it...${NC}"
+    mkdir -p "$LOG_DIR"
+else
+    echo -e "${GREEN}Directory $LOG_DIR already exists.${NC}"
+fi
 
 # Update system
 echo -e "${YELLOW}Updating system...${NC}"
@@ -96,9 +107,7 @@ check_or_clone_repo "https://github.com/ggerganov/llama.cpp.git" "llama.cpp"
 
 # Install PyLLMSol
 echo -e "${YELLOW}Installing PyLLMSol and llama-cpp-python...${NC}"
-
-# Return to main project
-cd ..
+pip install -e PyLLMSol/.
 
 # Install requirements
 echo -e "${YELLOW}Installing Python dependencies...${NC}"
@@ -112,7 +121,7 @@ echo -e "${YELLOW}Installing Gunicorn...${NC}"
 pip install gunicorn
 
 # Prompt user for hostname
-read -p "${BLUE}Enter your API hostname (e.g., api.example.com): ${NC}" HOSTNAME
+read -p "Enter your API hostname (e.g., api.example.com): " HOSTNAME
 if [ -z "$HOSTNAME" ]; then
   echo -e "${RED}Hostname cannot be empty. Exiting.${NC}"
   exit 1
@@ -139,7 +148,7 @@ sudo systemctl restart nginx
 
 # Final message
 echo -e "${GREEN}Setup complete.${NC}"
-echo "${BLUE}Please copy model weights and start the server as described in the documentation.${NC}"
+echo -e "${BLUE}Please copy model weights and start the server as described in the documentation.${NC}"
 
 if ! $CPU_ONLY && ! command -v nvidia-smi &>/dev/null; then
     echo -e "${YELLOW}If you plan to use GPU acceleration, please install GPU drivers and reboot your system.${NC}"

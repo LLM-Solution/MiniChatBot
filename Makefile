@@ -1,4 +1,4 @@
-.PHONY setup install_gpu train run clean
+.PHONY: setup install_gpu train run clean
 
 setup:
 	bash setup.sh
