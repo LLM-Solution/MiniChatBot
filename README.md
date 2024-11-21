@@ -23,6 +23,7 @@ MiniChatBot is a lightweight and efficient chatbot designed to run on a web plat
 ## Installation
 
 ### 1. System Requirements
+
 Ensure your system meets the following prerequisites:
 - **Operating System**: Ubuntu 24.04 or later
 - **Python**: Version 3.12 or higher
