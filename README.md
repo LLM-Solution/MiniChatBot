@@ -30,7 +30,6 @@ Ensure your system meets the following prerequisites:
 
 **Tip**: Run `python3 --version` and `nvidia-smi` to check Python and GPU availability.
 
-
 ### 2. Clone the Repository
 
 Clone the MiniChatBot repository:
@@ -40,7 +39,17 @@ git clone https://github.com/LLM-Solution/MiniChatBot.git
 cd MiniChatBot
 ```
 
-### 3. Setup Backend
+### 3. Install GPU Drivers (Optional)
+
+If you plan to use GPU acceleration, install GPU drivers, use the Makefile:
+
+```bash
+make install_gpu
+```
+
+**Important**: A system reboot is required after installing GPU drivers.
+
+### 4. Setup Backend
 
 Run the following command to set up the backend using the Makefile:
 
@@ -54,16 +63,6 @@ The script will:
 - Detect GPU availability and install the appropriate PyTorch version.
 - Clone necessary repositories (e.g., `llama.cpp`, `PyLLMSol`).
 - Configure Nginx for your API.
-
-### 4. Install GPU Drivers (Optional)
-
-If you plan to use GPU acceleration, install GPU drivers, use the Makefile:
-
-```bash
-make install_gpu
-```
-
-**Important**: A system reboot is required after installing GPU drivers.
 
 ### 5. Start the API
 
