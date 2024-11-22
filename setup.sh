@@ -3,7 +3,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-20 10:56:00
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 18:05:19
+# @Last modified time: 2024-11-22 10:15:37
 
 # Stop on errors
 set -e
@@ -74,6 +74,7 @@ check_or_create_dir() {
 }
 
 # Create logs directory
+mkdir -p "./_conv_history"
 LOG_DIR="./src/logs"
 
 if [ ! -d "$LOG_DIR" ]; then
@@ -137,7 +138,7 @@ sed "s/server_name api.example.com;/server_name $HOSTNAME;/" api.example.com.tem
 # Copy and enable the Nginx configuration
 echo -e "${YELLOW}Copying configuration to Nginx directory...${NC}"
 sudo mv "$HOSTNAME" "$CONFIG_FILE"
-sudo ln -s "$CONFIG_FILE" /etc/nginx/sites-enabled/
+sudo ln -sf "$CONFIG_FILE" /etc/nginx/sites-enabled/
 
 # Test and restart Nginx
 if ! sudo nginx -t; then
@@ -145,6 +146,9 @@ if ! sudo nginx -t; then
     exit 1
 fi
 sudo systemctl restart nginx
+
+# Add SSL Certificate
+sudo certbot --nginx -d "${HOSTNAME}"
 
 # Final message
 echo -e "${GREEN}Setup complete.${NC}"

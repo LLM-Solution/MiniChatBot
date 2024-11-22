@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-01-19 06:44:06
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-10-31 08:48:39
+# @Last modified time: 2024-11-21 19:12:13
 
 """ Script to merge LoRA weights and save the whole model. """
 
@@ -13,18 +13,18 @@ from pathlib import Path
 
 # Third party packages
 from peft import PeftModel
+from pyllmsol.argparser import _BasisArgParser
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
 
 # Local packages
-from config import (LOG, _BasisParser, DEVICE, ORIGINAL_MODEL, LORA_WEIGHTS,
-                    MODEL_PATH)
+from config import LOG, DEVICE, ORIGINAL_MODEL, LORA_WEIGHTS, MODEL_PATH
 
 __all__ = []
 
 
-class Parser(_BasisParser):
+class Parser(_BasisArgParser):
 
     def __call__(
         self,
@@ -96,8 +96,11 @@ class Main:
         LOG.info(f"<Trained LoRA weights are loaded from {lora_weights} and "
                  f"merged>")
 
-    def __call__(self, output_path):
+    def __call__(self, output_path: str | Path):
         # Save model and tokenizer
+        if isinstance(output_path, str):
+            output_path = Path(output_path)
+
         output_path.mkdir(parents=True, exist_ok=True)
 
         self.llm.save_pretrained(output_path)
@@ -120,23 +123,9 @@ if __name__ == "__main__":
     args = parser()
     LOG.info(f"{parser}\n")
 
-    if args.device != "cpu":
-        kw_gpu = {
-            "quantization_config": BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_compute_dtype=torch.bfloat16,
-            ),
-        }
-
-    else:
-        kw_gpu = {}
-
     main = Main(
         original_model_path=args.model,
         lora_weights=args.lora,
         device=args.device,
-        **kw_gpu
     )
     main(output_path=args.output_path)

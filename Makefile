@@ -1,19 +1,35 @@
+SHELL := /bin/bash
 .PHONY: setup install_gpu train run clean
 
+VENV_PATH = ~/venv
+ACTIVATE = source $(VENV_PATH)/bin/activate
+
 setup:
-	bash setup.sh
+	@echo "Installing dependencies, set virtual env and setup Nginx..."
+	./setup.sh
 
 install_gpu:
-	sudo bash install_gpu.sh
+	@echo "Starting installing GPU drivers and CUDA..."
+	sudo ./install_gpu.sh
 
 train:
 	@echo "Starting training pipeline..."
-	bash train_model.sh
+	./train_model.sh
 
 run:
-	source ~/venv/bin/activate
-	gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120
+	@echo "Starting running backend server..."
+	$(ACTIVATE) && gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120
 
 clean:
+	@echo "Cleaning virtual env..."
 	rm -rf ~/venv
+	@echo "Cleaning logs..."
 	rm -rf src/logs/*
+
+help:
+	@echo "Available commands:"
+	@echo "  setup         - Install requirements and setup virtual env and Nginx"
+	@echo "  install_gpu   - Install GPU drivers and CUDA"
+	@echo "  train         - Run training pipeline"
+	@echo "  run           - Start the backend server"
+	@echo "  clean         - Clean up environment and logs"

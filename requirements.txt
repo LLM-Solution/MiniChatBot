@@ -1,3 +1,4 @@
+itsandbytes>=0.44.1
 cryptography>=43.0.3
 flask>=3.0.3
 llama-cpp-python>=0.3.1

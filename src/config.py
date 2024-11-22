@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 18:45:54
+# @Last modified time: 2024-11-21 19:38:20
 
 """ Configuration variables. """
 
@@ -31,7 +31,7 @@ TOKEN_LIMIT = 32_768
 
 # General path config
 ROOT = Path("../MiniChatBot")
-# ROOT = Path("/root/MiniChatBot/")
+# ROOT = Path("/home/ubuntu/MiniChatBot/")
 DATA_PATH = ROOT / "data/full_data.json"
 ENV_PATH = ROOT / ".env"
 STORAGE_PATH = ROOT / ".storage"
@@ -39,16 +39,16 @@ CONV_HISTORY_PATH = ROOT / "_conv_history"
 PROMPT_PATH = ROOT / "Prompts"
 
 # Models name parameters
-MODEL_NAME = "Llama-3.2"
+MODEL_BASE = "Llama-3.2"
 MODEL_SIZE = "1B"
 IS_INSTRUCT = True
 INSTRUCT = "-Instruct" if IS_INSTRUCT else ""
 TRAINED_MODEL = "MiniChatBot-1.0"
 
 # Model paths
-MODEL_NAME = ROOT / f"models/{MODEL_NAME}-{MODEL_SIZE}{INSTRUCT}"
-GGUF_MODEL = ROOT / f"models/{MODEL_NAME}-{MODEL_SIZE}{INSTRUCT}.Q8_0.gguf"
+MODEL_NAME = ROOT / f"models/{MODEL_BASE}-{MODEL_SIZE}{INSTRUCT}"
 ORIGINAL_MODEL = MODEL_NAME
+GGUF_MODEL = ROOT / f"models/{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}-q8_0.gguf"
 LORA_WEIGHTS = ROOT / f"models/LoRA_{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}"
 MODEL_PATH = ROOT / f"models/{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}/"
 SAVE_MODEL_PATH = ROOT / f"models/{TRAINED_MODEL}-{MODEL_SIZE}{INSTRUCT}"

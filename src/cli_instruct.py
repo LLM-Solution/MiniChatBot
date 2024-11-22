@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 11:48:34
+# @Last modified time: 2024-11-22 15:27:46
 
 """ CLI objects for instruct models. """
 
@@ -77,7 +77,7 @@ class InstructCLI(BaseInstructCLI):
         lora_path: Path | str = None,
         verbose: bool = False,
         n_ctx: int = 32768,
-        n_threads=4,
+        n_threads: int = 4,
         **kwargs,
     ):
         super(InstructCLI, self).__init__(
