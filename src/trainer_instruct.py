@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-13 16:23:53
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 18:36:55
+# @Last modified time: 2024-11-22 16:49:31
 
 """ Description. """
 
@@ -164,6 +164,18 @@ class Main(_Base):
 
             self.logger.info(f"Generated: {ans}")
 
+    def increment_data(self, data):
+        n = len(data.items)
+        new_data = data.items
+        new_data += [data.items[i] + data.items[i + 1] for i in range(0, n, 2)]
+        new_data += [data.items[i] + data.items[i + 1] + data.items[i + 2] for i in range(0, n, 3)]
+        new_data += [data.items[i] + data.items[i + 1] + data.items[i + 2] + data.items[i + 3] for i in range(0, n, 4)]
+
+        seed(42)
+        shuffle(new_data)
+
+        return DataSet(new_data, batch_size=data.batch_size, tokenizer=data.tokenizer)
+
     def load_data(self, path, batch_size: int = 1):
         data = DataSet.from_jsonl(
             path,
@@ -176,6 +188,8 @@ class Main(_Base):
         # Shuffle data
         seed(42)
         shuffle(data.items)
+
+        data = self.increment_data(data)
 
         self.logger.debug(f"Sample chat: {data[0]}")
         self.data = DataSet(
