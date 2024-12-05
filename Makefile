@@ -18,12 +18,11 @@ train:
 
 run:
 	@echo "Starting running backend server..."
-	$(ACTIVATE) && gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120 --pid gunicorn.pid
+	$(ACTIVATE) && gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120
 
 stop:
 	@echo "Stopping backend server..."
-	@if [ -f gunicorn.pid ]; then kill $(shell cat gunicorn.pid) && rm gunicorn.pid; else echo "No PID file found. Is the server running?"; fi
-	# 	pkill -f "gunicorn --log-config ~/MiniChatBot/logging.ini"
+	pkill -f gunicorn
 
 clean:
 	@echo "Cleaning virtual env..."
@@ -35,7 +34,7 @@ update:
 	@echo "Updating GitHub repository..."
 	git pull origin main
 	cd PyLLMSol && git pull origin main && cd ..
-	cd llama.cpp && git pull origin main && cd ..
+	cd llama.cpp && git pull && cd ..
 	@echo "Updating Python dependencies..."
 	$(ACTIVATE) && pip install --upgrade -r ~/MiniChatBot/requirements.txt
 

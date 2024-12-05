@@ -7,6 +7,8 @@
 
 # Ignore files
 .env
+.storage
+_old_*
 
 # Ignore extensions
 *.pyc

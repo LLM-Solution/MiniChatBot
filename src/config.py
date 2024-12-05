@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2023-12-11 16:53:30
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-21 19:38:20
+# @Last modified time: 2024-12-05 09:05:08
 
 """ Configuration variables. """
 
@@ -79,17 +79,17 @@ class CLIParser(_BasisArgParser):
 
     def __call__(
         self,
-        lora_path: str | Path = None,
+        # lora_path: str | Path = None,
         n_ctx: str = TOKEN_LIMIT,
         n_threads: int = 4,
     ):
-        self.add_argument(
-            "--lora_path", "--lora-path",
-            default=lora_path,
-            type=Path,
-            help=(f"Path to load LoRA weights (optional), default is "
-                  f"{lora_path}."),
-        )
+        # self.add_argument(
+        #     "--lora_path", "--lora-path",
+        #     default=lora_path,
+        #     type=Path,
+        #     help=(f"Path to load LoRA weights (optional), default is "
+        #           f"{lora_path}."),
+        # )
         self.add_argument(
             "--verbose", "-v",
             action="store_true",

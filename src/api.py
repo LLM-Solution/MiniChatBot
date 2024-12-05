@@ -2,14 +2,17 @@
 # coding: utf-8
 # @Author: ArthurBernard
 # @Email: arthur.bernard.92@gmail.com
-# @Date: 2024-10-23 16:25:55
+# @Date: 2024-11-15 12:16:12
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 12:23:57
+# @Last modified time: 2024-12-05 11:19:53
+# @File path: ./src/api.py
+# @Project: MiniChatBot
 
 """ Flask API object for MiniChatBot. """
 
 # Built-in packages
 from datetime import datetime, timedelta
+from functools import wraps
 from logging import getLogger
 from markupsafe import escape
 from random import randint
@@ -17,25 +20,50 @@ import re
 from secrets import token_hex
 
 # Third party packages
-from flask import Flask, request, Response
-from pyllmsol.data.prompt import Prompt
+from flask import Flask, make_response, request, Response
+from pyllmsol.inference.api import API
 
 # Local packages
-from _base_api import API, cors_required
-from cli import CommandLineInterface
+from minichatbot import MiniChatBot
 from config import GGUF_MODEL
 from utils import load_storage, save_storage, send_email_otp, save_message
 
 __all__ = []
 
 
-class MiniChatBotAPI(API, CommandLineInterface):
-    """ MiniChatBot API object to chat with the retrained LLM.
+# CORS decorator function
+def cors_required(f):
+    @wraps(f)
+    def wrapped_function(*args, **kwargs):
+        if request.method == 'OPTIONS':
+            # Preflight request
+            response = make_response()
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add(
+                "Access-Control-Allow-Headers",
+                "Authorization, Content-Type",
+            )
+            response.headers.add(
+                "Access-Control-Allow-Methods",
+                "POST, OPTIONS, GET",
+            )
+
+            return response
+
+        # Actual request
+        response = make_response(f(*args, **kwargs))
+        response.headers.add("Access-Control-Allow-Origin", "*")
+
+        return response
+
+    return wrapped_function
+
+
+class MiniChatBotAPI(API, MiniChatBot):
+    """ API app to chat with MiniChatBot LLM.
 
     Parameters
     ----------
-    lora_path : Path or str, optional
-        Path to load LoRA weights.
     verbose : bool, optional
         If True then LLM is run with verbosity. Default is False.
     n_ctx : int, optional
@@ -115,7 +143,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
         self.debug = debug
 
         # Set CLI part
-        CommandLineInterface.__init__(
+        MiniChatBot.__init__(
             self,
             verbose=verbose,
             n_ctx=n_ctx,
@@ -253,7 +281,7 @@ class MiniChatBotAPI(API, CommandLineInterface):
 
                 return {'error': 'OTP not found'}, 404
 
-            elif str(datetime.now()) >= self.otp_store[email]['expiry']:
+            elif datetime.now().isoformat() >= self.otp_store[email]['expiry']:
                 self.logger.error("error 400 - OTP expired")
                 del self.otp_store[email]
 
@@ -305,18 +333,19 @@ class MiniChatBotAPI(API, CommandLineInterface):
                 ans = ""
                 for chunk in output:
                     ans += chunk
-                    self.prompt_hist += chunk
 
                     yield chunk
 
-                self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(ans)}")
+                self.prompt_hist['assistant'] = ans
+                self.logger.debug(f"ANSWER - {self.ai_name} : {ans}")
                 save_message(email, "assistant", ans)
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
-            self.prompt_hist += output
-            self.logger.debug(f"ANSWER - {self.ai_name} : {Prompt(output)}")
+            self.prompt_hist['assistant'] = output
+            self.logger.debug(f"ANSWER - {self.ai_name} : {output}")
+            save_message(email, "assistant", output)
             response = Response(output, content_type='text/plain')
 
         return response

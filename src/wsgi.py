@@ -4,16 +4,18 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-24 23:42:59
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-11-15 13:43:29
+# @Last modified time: 2024-12-05 10:19:39
+# @File path: ./src/wsgi.py
+# @Project: MiniChatBot
 
-""" Description. """
+""" WSGI app. """
 
 # Built-in packages
 
 # Third party packages
 
 # Local packages
-from api_instruct import MiniChatBotAPI
+from api import MiniChatBotAPI
 
 __all__ = []
 
