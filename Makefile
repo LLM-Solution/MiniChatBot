@@ -18,11 +18,12 @@ train:
 
 run:
 	@echo "Starting running backend server..."
-	$(ACTIVATE) && gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120
+	$(ACTIVATE) && gunicorn --log-config ~/MiniChatBot/logging.ini --chdir ~/MiniChatBot/src --bind 0.0.0.0:5000 wsgi:app --timeout 120 --pid gunicorn.pid
 
 stop:
 	@echo "Stopping backend server..."
-	pkill -f "gunicorn --log-config ~/MiniChatBot/logging.ini"
+	@if [ -f gunicorn.pid ]; then kill $(shell cat gunicorn.pid) && rm gunicorn.pid; else echo "No PID file found. Is the server running?"; fi
+	# 	pkill -f "gunicorn --log-config ~/MiniChatBot/logging.ini"
 
 clean:
 	@echo "Cleaning virtual env..."
