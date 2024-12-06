@@ -80,6 +80,9 @@ make run
 | `make setup` | Complete backend setup, including dependencies and Nginx setup. |
 | `make install_gpu` | Install NVIDIA GPU drivers (optional). |
 | `make run` | Start the backend API server using Gunicorn. |
+| `make status` | Check backend server status. |
+| `make stop` | Stop the backend server. |
+| `make update` | Pull latest code and update dependencies. |
 | `make clean` | Clean up logs and temporary files. |”
 
 ## Configuration
@@ -105,21 +108,31 @@ If you need to change the hostname later, edit the Nginx configuration and resta
 
 ## Directory Structure
 
-```plaintext
+```
 MiniChatBot/
-├── data/                # Data for training model
-├── model/               # Trained models
-├── Prompts/             # Initial prompts for the chatbot
-├── install_gpu.sh       # Optional script for GPU driver installation
-├── setup.sh             # Main setup script
-├── Makefile             # Makefile for common tasks
-├── requirements.txt     # Python dependencies
-├── src/                 # Source code directory
-│   └── logs/            # Logs directory
-│   └── python_file.py   # TODO : list all python files
-├── PyLLMSol/            # Cloned PyLLMSol repository
-├── llama.cpp/           # Cloned llama.cpp repository
-└── README.md            # Project documentation
+├── data/                  # Data files for training the model
+├── model/                 # Directory for trained models
+├── Prompts/               # Initial prompts for the chatbot
+├── install_gpu.sh         # Optional script for GPU driver installation
+├── setup.sh               # Main setup script
+├── train_model.sh         # Script to train, merge, and quantize the LLM
+├── Makefile               # Makefile for common tasks
+├── requirements.txt       # Python dependencies
+├── src/                   # Source code directory
+│   ├── logs/              # Directory for log files
+│   ├── api.py             # Script to connect MiniChatBot to the API
+│   ├── config.py          # Configuration file
+│   ├── lora_merger.py     # Script to merge LoRA weights with the base model
+│   ├── make_full_data.py  # Script to gather and prepare data
+│   ├── trainer.py         # Script to retrain the LLM
+│   ├── utils.py           # Utility functions
+│   ├── wsgi.py            # WSGI entry point
+│   └── tests/             # Test module for unit and integration tests
+│       └── ...
+├── PyLLMSol/              # Cloned repository for PyLLMSol
+├── llama.cpp/             # Cloned repository for llama.cpp
+└── README.md              # Project documentation
+
 ```
 
 ## Common Issues

@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 11:15:54
+# @Last modified time: 2024-12-05 15:13:38
 # @File path: ./src/minichatbot.py
 # @Project: MiniChatBot
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         # Load logging configuration
         logging.config.fileConfig(ROOT / 'logging.ini')
 
-    cli = InstructCLI(
+    cli = MiniChatBot(
         verbose=args.verbose,
         n_ctx=args.n_ctx,
         n_threads=args.n_threads,
