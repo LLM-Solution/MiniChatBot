@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-10 17:44:49
+# @Last modified time: 2024-12-10 18:27:07
 # @File path: ./src/minichatbot.py
 # @Project: MiniChatBot
 
@@ -73,26 +73,29 @@ class MiniChatBot(InstructCLI):
 
     def __init__(
         self,
+        llm: Llama = None,
         verbose: bool = False,
         n_ctx: int = 32768,
         n_threads: int = 4,
         **kwargs,
     ):
-        llm = Llama(
-            model_path=str(GGUF_MODEL),
-            verbose=False,
-            n_ctx=n_ctx,
-            n_threads=n_threads,
-            **kwargs,
-        )
+        if llm is None:
+            llm = Llama(
+                model_path=str(GGUF_MODEL),
+                verbose=False,
+                n_ctx=n_ctx,
+                n_threads=n_threads,
+                **kwargs,
+            )
+
         prompt_path = PROMPT_PATH / "short_prompt.jsonl"
 
         super().__init__(llm, init_prompt=prompt_path, verbose=verbose)
 
     @classmethod
-    def init_from_llm(self llm, verbose: bool = False):
+    def init_from_llm(self, llm, verbose: bool = False):
         prompt_path = PROMPT_PATH / "short_prompt.jsonl"
-        super().__init__(llm, init_prompt=prompt_path, verbose=verbose)
+        InstructCLI.__init__(self, llm, init_prompt=prompt_path, verbose=verbose)
 
     def set_init_prompt(self, json_path: Path):
         """ Initialize or update the starting prompt for the LLM.

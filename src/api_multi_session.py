@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-12-10 17:16:06
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-10 17:47:48
+# @Last modified time: 2024-12-10 18:27:32
 # @File path:
 # @Project: MiniChatBot
 
@@ -22,6 +22,7 @@ from secrets import token_hex
 # Third party packages
 from flask import Flask, make_response, request, Response
 from llama_cpp import Llama
+from pyllmsol._base import _Base
 from pyllmsol.inference.api import API
 from pyllmsol.inference.session_manager import SessionManager
 
@@ -144,6 +145,7 @@ class MiniChatBotAPI(API):
     ):
         self.debug = debug
         self.verbose = verbose
+        _Base.__init__(self, verbose=verbose, n_ctx=n_ctx, n_threads=n_threads, debug=debug)
 
         # Set LLM model
         self.llm = Llama(
@@ -310,7 +312,7 @@ class MiniChatBotAPI(API):
             }
 
             # Create session
-            cli = MiniChatBot.init_from_llm(self.llm, verbose=self.verbose)
+            cli = MiniChatBot(self.llm, verbose=self.verbose)
             self.session[token] = cli
 
             return message, 200
