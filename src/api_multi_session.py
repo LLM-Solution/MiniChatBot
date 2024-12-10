@@ -2,10 +2,10 @@
 # coding: utf-8
 # @Author: ArthurBernard
 # @Email: arthur.bernard.92@gmail.com
-# @Date: 2024-11-15 12:16:12
+# @Date: 2024-12-10 17:16:06
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-10 17:47:32
-# @File path: ./src/api.py
+# @Last modified time: 2024-12-10 17:47:48
+# @File path:
 # @Project: MiniChatBot
 
 """ Flask API object for MiniChatBot. """
@@ -21,7 +21,9 @@ from secrets import token_hex
 
 # Third party packages
 from flask import Flask, make_response, request, Response
+from llama_cpp import Llama
 from pyllmsol.inference.api import API
+from pyllmsol.inference.session_manager import SessionManager
 
 # Local packages
 from minichatbot import MiniChatBot
@@ -59,7 +61,7 @@ def cors_required(f):
     return wrapped_function
 
 
-class MiniChatBotAPI(API, MiniChatBot):
+class MiniChatBotAPI(API):
     """ API app to chat with MiniChatBot LLM.
 
     Parameters
@@ -141,15 +143,19 @@ class MiniChatBotAPI(API, MiniChatBot):
         **kwargs,
     ):
         self.debug = debug
+        self.verbose = verbose
 
-        # Set CLI part
-        MiniChatBot.__init__(
-            self,
-            verbose=verbose,
+        # Set LLM model
+        self.llm = Llama(
+            model_path=str(GGUF_MODEL),
+            verbose=False,
             n_ctx=n_ctx,
             n_threads=n_threads,
             **kwargs,
         )
+
+        # Set session manager
+        self.sessions = SessionManager(self.llm, cli_class=MiniChatBot)
 
         # Storage of otp code and tokens
         self.load_storage()
@@ -235,9 +241,9 @@ class MiniChatBotAPI(API, MiniChatBot):
                               f"{question}")
             save_message(email, "user", question)
 
-            output = self.ask(question, stream=stream)
+            output = self.sessions[token].ask(question, stream=stream)
 
-            return self.answer(output, email, stream=stream)
+            return self.answer(output, email, token, stream=stream)
 
         @self.app.route('/send-otp', methods=['POST', 'OPTIONS'])
         @cors_required
@@ -294,8 +300,6 @@ class MiniChatBotAPI(API, MiniChatBot):
             # Remove OTP code
             # del self.otp_store[email]
 
-            # Create session ?
-
             # Generate authentification token
             token = token_hex(16)
             self.session_tokens[email] = token
@@ -305,15 +309,23 @@ class MiniChatBotAPI(API, MiniChatBot):
                 'token': token,
             }
 
+            # Create session
+            cli = MiniChatBot.init_from_llm(self.llm, verbose=self.verbose)
+            self.session[token] = cli
+
             return message, 200
 
-    def answer(self, output, email, stream: bool = False):
+    def answer(self, output, email, token, stream: bool = False):
         """ Formats and sends the chatbot's response.
 
         Parameters
         ----------
         output : str or generator of str
             Output of the LLM.
+        email : str
+            Email address.
+        token : str
+            Session token.
         stream : bool, optional
             If True then stream the LLM output, otherwise return the full output
             at the end of the generation (default).
@@ -332,14 +344,14 @@ class MiniChatBotAPI(API, MiniChatBot):
 
                     yield chunk
 
-                self.prompt_hist['assistant'] = ans
+                self.session[token].prompt_hist['assistant'] = ans
                 self.logger.debug(f"ANSWER - {self.ai_name} : {ans}")
                 save_message(email, "assistant", ans)
 
             response = Response(generator(), content_type='text/event-stream')
 
         else:
-            self.prompt_hist['assistant'] = output
+            self.session[token].prompt_hist['assistant'] = output
             self.logger.debug(f"ANSWER - {self.ai_name} : {output}")
             save_message(email, "assistant", output)
             response = Response(output, content_type='text/plain')

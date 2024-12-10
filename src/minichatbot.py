@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-11-09 16:49:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 15:13:38
+# @Last modified time: 2024-12-10 17:44:49
 # @File path: ./src/minichatbot.py
 # @Project: MiniChatBot
 
@@ -87,6 +87,11 @@ class MiniChatBot(InstructCLI):
         )
         prompt_path = PROMPT_PATH / "short_prompt.jsonl"
 
+        super().__init__(llm, init_prompt=prompt_path, verbose=verbose)
+
+    @classmethod
+    def init_from_llm(self llm, verbose: bool = False):
+        prompt_path = PROMPT_PATH / "short_prompt.jsonl"
         super().__init__(llm, init_prompt=prompt_path, verbose=verbose)
 
     def set_init_prompt(self, json_path: Path):

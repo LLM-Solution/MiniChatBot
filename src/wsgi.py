@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2024-10-24 23:42:59
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-12-05 10:19:39
+# @Last modified time: 2024-12-10 18:07:03
 # @File path: ./src/wsgi.py
 # @Project: MiniChatBot
 
@@ -15,7 +15,7 @@
 # Third party packages
 
 # Local packages
-from api import MiniChatBotAPI
+from api_multi_session import MiniChatBotAPI
 
 __all__ = []
 
